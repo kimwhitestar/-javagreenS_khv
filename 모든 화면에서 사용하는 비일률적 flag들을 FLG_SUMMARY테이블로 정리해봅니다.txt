@@ -1,0 +1,241 @@
+--- flgSummaryMapper.sql ---
+-- MINE (모든 화면에서 사용하는 비일률적 flag들을 FLG_SUMMARY테이블로 정리해봄)
+
+-- DTO 없애려면 테이블을 flgSummary로 수정해서 VO로 바로 사용
+CREATE TABLE FLG_SUMMARY (
+IDX INT(15) NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+FLG_CD VARCHAR(50) NOT NULL, 
+FLG_NM  VARCHAR(300) NOT NULL, 
+MENU_CD VARCHAR(100) NULL, 
+MENU_NM VARCHAR(200) NULL, 
+SUB_MENU_CD VARCHAR(100) NULL, 
+SUB_MENU_NM VARCHAR(200) NULL, 
+DEL_FLAG INT(1) NOT NULL DEFAULT 1 COMMENT '1:해당안됨, 2:삭제됨',
+CREATE_DATE  TIMESTAMP  NULL DEFAULT CURRENT_TIMESTAMP,  
+CREATE_USER VARCHAR(10) DEFAULT NULL, 
+UPDATE_DATE  TIMESTAMP  NULL DEFAULT CURRENT_TIMESTAMP, 
+UPDATE_USER VARCHAR(10) DEFAULT NULL, 
+DELETE_DATE TIMESTAMP  NULL DEFAULT CURRENT_TIMESTAMP, 
+DELETE_USER VARCHAR(10) DEFAULT NULL 
+); 
+
+INSERT INTO FLG_SUMMARY VALUES (DEFAULT, 'DELETE_OVER_FLG', 'NONE:해당안됨|OVER:30일경과|PRAC:30일미경과', '000', '관리자메뉴', '180', '탈퇴회원목록조회메뉴', DEFAULT, NOW(), '내꼬일걸팀', NULL, NULL, NULL, NULL);
+ 
+# selectbox 화면출력결과
+---------
+해당안됨 (selected)
+---------
+해당안됨		 
+30일 경과		
+30일 미경과	
+---------
+
+ 
+
+# sysoutFlgSummary.jsp
+<%--
+
+<div>
+<label for="overFlg" class="text-left">30일 경과</label>
+<select id="overFlg" name="overFlg" class="text-left" <c:if test="${'2' == delOverFlgVo.delFlag}"> disabled </c:if> >
+<c:forEach var="flgVo" items="${delOverFlgVo.flagVos}" >
+<option value="${flgVo.flgCd}"> ${flgVo.flgNm} </option>
+</c:forEach>
+</select>
+</div>
+
+--%>
+
+ 
+
+########## FlgSummaryTest.java ##########
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
+
+public class FlgSummaryTest {
+//@Autowired
+//FlgSummaryService flgSummaryService;
+
+public static void main(String[] args) {
+FlgSummaryServiceOut flgSummaryService = new FlgSummaryServiceImplOut(); 
+/*회원탈퇴후 30일 경과여부 flag 획득 (NONE:해당안됨|OVER:30일경과|PRAC:30일미경과)*/
+FlgSummaryVOOut flgSummaryVo = flgSummaryService.searchFlg("DELETE_OVER_FLG", "000", "180");
+//model.addAttribute("delOverFlgVo", flgSummaryVo);//(request.setAttribute("delOverFlgVo", flgSummaryVo);)
+
+System.out.println();
+}
+}
+
+interface FlgSummaryServiceOut {
+public FlgSummaryVOOut searchFlg(String flgCd, String menuCd, String subMenuCd);
+}
+
+//@Service
+class FlgSummaryServiceImplOut implements FlgSummaryServiceOut {
+//@Autowired
+//public FlgSummaryDAO flgSummaryDao;
+
+@Override
+public FlgSummaryVOOut searchFlg(String flgCd, String menuCd, String subMenuCd) {
+if (null == flgCd || null == menuCd || null == subMenuCd) return null;
+
+FlgSummaryDAOOut flgSummaryDao = new OldDAO();
+FlgSummaryDTOOut flgSummaryDto = flgSummaryDao.searchFlg(flgCd, menuCd, subMenuCd);
+if (null == flgSummaryDto) return null;
+
+String[] flgNmRec = getFlgSummaryRecords(flgSummaryDto.getFlg_nm());
+List<FlagVOOut> flagVos = getFlgSummaryVos(flgNmRec);
+if (null == flagVos) return null;
+
+FlgSummaryVOOut flgSummaryVo = new FlgSummaryVOOut();
+flgSummaryVo.setFlagVos(flagVos);
+flgSummaryVo.setDelFlag(flgSummaryDto.getDel_flag());//default : enable, deleted : disable
+
+return flgSummaryVo;
+}
+
+private List<FlagVOOut> getFlgSummaryVos(String[] flgNmRec) {
+if (null == flgNmRec || 1 > flgNmRec.length) return null;
+List<FlagVOOut> flagVos = new ArrayList<>();
+FlagVOOut flagVo = null;
+int startIdx = 0, endIdx = 0;
+for (String flgNmRow : flgNmRec) {//NONE:해당안됨|OVER:30일경과|PRAC:30일미경과
+endIdx = flgNmRow.indexOf(":");
+if (1 > endIdx || endIdx == flgNmRow.length()-1) continue;
+flagVo = new FlagVOOut();
+flagVo.setFlgCd(flgNmRow.substring(startIdx, endIdx));//key
+startIdx = endIdx + 1;
+endIdx = flgNmRow.length();
+if (startIdx == endIdx) {
+flagVo.setFlgNm("");//value
+continue;
+}
+flagVo.setFlgNm(flgNmRow.substring(startIdx, endIdx));//value
+flagVos.add(flagVo);
+startIdx = 0;
+}
+if (1 > flagVos.size()) return null;
+else return flagVos;
+}
+
+private String[] getFlgSummaryRecords(String flgNm) {
+int length = getFlgSummaryVosTempSize(flgNm);
+if (0 == length) return null;
+
+int startIdx = 0, endIdx = 0, lastIdx = 0;
+String[] flgNmRec = new String[length];//[NONE:해당안됨][OVER:30일경과][PRAC:30일미경과]
+int recIdx = 0;
+for (int i=0; i<flgNm.length(); i++) {
+endIdx = flgNm.indexOf("|", startIdx);//-1, 0,1,2, 3,11의 경우
+lastIdx = flgNm.lastIndexOf("|");//-1, 0,1,2, 10,11의 경우
+if (lastIdx == (flgNm.length() - 1)) {//|로 끝나는 글자 1개는 안자름
+return null;
+} else { //lastIdx < (flgNm.length() - 1)
+if (-1 == endIdx) endIdx = flgNm.length();
+}
+if (startIdx == endIdx) {//|만 연속하는 값인 경우 안자름
+startIdx = endIdx + 1;
+if (startIdx >= flgNm.length()) break;
+else continue;//다음 endIdx 찾기
+}
+if (recIdx == length) break;
+flgNmRec[recIdx] = flgNm.substring(startIdx, endIdx);
+recIdx++;
+startIdx = endIdx + 1;
+if (startIdx >= flgNm.length()) break;
+}
+return flgNmRec;
+}
+
+private int getFlgSummaryVosTempSize(String flgNm) {
+int startIdx = 0, endIdx = 0, cnt = 0;
+if (null != flgNm) {
+if (3 <= flgNm.length()) {
+cnt = 1;
+for (int i=0; i<flgNm.length(); i++) {
+endIdx = flgNm.indexOf("|", startIdx);//NONE:해당안됨|OVER:30일경과|PRAC:30일미경과
+if (-1 == endIdx) break;
+if (startIdx == endIdx) {//|만 연속하는 값인 경우 안자름
+startIdx = endIdx + 1;
+if (startIdx >= flgNm.length()) break;
+else continue;//다음 endIdx 찾기
+}
+startIdx = endIdx + 1;
+cnt ++;
+}
+}
+}
+return cnt;
+}
+}
+
+class FlgSummaryVOOut {
+//public @Data class FlgSummaryVO {
+private String delFlag;
+private List<FlagVOOut> flagVos;
+public void setDelFlag(String delFlag) { this.delFlag = delFlag; }
+public String getDelFlg() { return this.delFlag; }
+public void setFlagVos(List<FlagVOOut> flagVos) { this.flagVos = flagVos; }
+public List<FlagVOOut> getFlagVos() { return this.flagVos; }
+}
+
+class FlagVOOut {
+//public @Data class FlagVO {
+private String flgCd;
+private String flgNm;
+public void setFlgCd(String flgCd) { this.flgCd = flgCd; }
+public String getFlgCd() { return this.flgCd; }
+public void setFlgNm(String flgNm) { this.flgNm = flgNm; }
+public String getFlgNm() { return this.flgNm; }
+}
+
+class FlgSummaryDTOOut {
+//public @Data class FlgSummaryDTO {
+private String flg_cd;
+private String flg_nm;
+private String del_flag;
+public void setFlg_cd(String flg_cd) { this.flg_cd = flg_cd; }
+public String getFlg_cd() { return this.flg_cd; }
+public void setFlg_nm(String flg_nm) { this.flg_nm = flg_nm; }
+public String getFlg_nm() { return this.flg_nm; }
+public void setDel_flag(String del_flag) { this.del_flag = del_flag; }
+public String getDel_flag() { return this.del_flag; }
+}
+
+interface FlgSummaryDAOOut {
+public FlgSummaryDTOOut searchFlg(@Param("flgCd") String flgCd, @Param("menuCd") String menuCd, @Param("subMenuCd") String subMenuCd);
+}
+
+class OldDAO implements FlgSummaryDAOOut {
+public FlgSummaryDTOOut searchFlg(@Param("flgCd") String flgCd, @Param("menuCd") String menuCd, @Param("subMenuCd") String subMenuCd) {
+FlgSummaryDTOOut dto = null;
+//dto = flgSummaryMapper.xml로 mibatis쿼리문실행;
+return dto;
+}
+
+//--- flgSummaryMapper.xml ---
+//<?xml version="1.0" encoding="UTF-8"?>
+//<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+//  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+//
+//<mapper namespace="com.spring.javagreenS_khv.dao.FlgSummaryDAO">
+// <select id="searchFlg" resultType="com.spring.javagreenS_khv.dto.FlgSummaryDTO">
+// SELECT FLG_CD, FLG_NM, DEL_FLAG FROM FLG_SUMMARY WHERE FLG_CD = #{flgCd} AND MENU_CD = #{menuCd} AND SUB_MENU_CD = #{subMenuCd}
+// </select>
+//</mapper>
+
+
+
+
+
+
+
+
+
+
+
+}
+##############################

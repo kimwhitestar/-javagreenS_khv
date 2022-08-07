@@ -1,0 +1,44 @@
+1. pom.xml 추가 후 maven update
+
+		<!-- 트랜잭션 적용 spring-tx (스프링 버전에 꼭 맞추기)-->
+		<!-- https://mvnrepository.com/artifact/org.springframework/spring-tx -->
+		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-tx</artifactId>
+		    <!-- <version>4.3.14.RELEASE</version>  -->
+		    <version>${org.springframework-version}</version>
+		</dependency>
+
+2. root-context.xml 네임스페이스탭에 tx 체크선택 후 설정 추가 (aop, bean, context, jdbc, mibatis-spring, tx 체크 확인)
+	<!-- 데이타베이스 연결 (JDBC) -->
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<!-- 1. query여러개 한번에 실행 : 멀티쿼리허용true -->
+		<!-- (멀티쿼리는 db에서 not null column이지만 무조건 입력됨, 길이와 타입은 입력 에러발생, 트랜잭션은 아직 적용안된 상태) -->
+		<!-- 2. 아래 transactionManager bean 추가 -->
+		<!-- 3. 트랜잭션 어노테이션 추가 -->
+		<property name="url" value="jdbc:mysql://localhost:3306/javagreen?allowMultiQueries=true" /> ##################### 1> 멀티쿼리 설정 추가
+		<property name="username" value="root" />
+		<property name="password" value="1234" />
+	</bean>
+
+	<!-- 트랜잭션을 위한 bean 등록 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"> ############# 2> 트랜잭션 bean 등록
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- 트랜잭션 필요한 상황에서 어노테이션 추가 설정 --> ########################################################################### 3> 트랜잭션 어노테이션 추가
+	<tx:annotation-driven/>
+	
+	<!-- 메일서비스 위 -->
+	
+3. servlet-context.xml 네임스페이스탭에 tx 체크선택 후 설정 추가(bean, context, mvc, tx 4개 체크 확인)
+	<!-- 트랜잭션 어노테이션 클래스 등록 -->
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+4. 소스작성시, serviceImple에서만 메소드에 @Transactional 어노테이션 추가, mapper xml화일 작성시 멀티쿼리문 작성 추가
+	<insert>
+		insert ~ 1개; 
+		insert ~ M개 처럼 여러쿼리를 한곳에 작성할 수 있음
+	</insert> 
+	
+5. mapper xml 실행시 sql에러 발생시, 트랜잭션 rollback 처리됨

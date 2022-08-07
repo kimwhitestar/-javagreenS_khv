@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.javagreenS_khv.dao.CustomPersonDAO">
+	<select id="searchLogin" resultType="com.spring.javagreenS_khv.dto.CustomPersonLoginDTO">
+		SELECT 
+			A.LOGIN_ID AS LOGIN_ID,  -- primary key
+			A.LOGIN_PWD AS LOGIN_PWD,
+			A.CUSTOM_ID AS CUSTOM_ID,  -- foreign key (custom_person TBL)
+			B.CUSTOM_NM AS CUSTOM_NM,  -- foreign key (코드TBL)
+			A.CUSTOM_GRADE AS CUSTOM_GRADE,
+			(SELECT GRADE_NAME FROM CUSTOM_GRADE WHERE GRADE_CODE = A.CUSTOM_GRADE) AS GRADE_NAME,  -- foreign key (코드TBL)
+			A.POINT AS POINT,
+			A.VISIT_CNT AS VISIT_CNT,
+			A.TODAY_CNT AS TODAY_CNT,
+			A.LOGIN_DATE AS LOGIN_DATE,
+			A.LOGOUT_DATE AS LOGOUT_DATE,
+			A.CREATE_DATE AS CREATE_DATE,
+			A.UPDATE_DATE AS UPDATE_DATE,
+			A.DELETE_DATE AS DELETE_DATE  
+		FROM CUSTOM_PERSON_LOGIN A, CUSTOM_PERSON B
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		  AND A.LOGIN_ID = #{loginId} AND A.LOGIN_PWD = #{encryptPwd} AND A.DELETE_DATE IS NULL ;  -- primary key(LOGIN_ID) indexing	    
+	</select>
+	<update id="updateTodayCnt">
+		UPDATE CUSTOM_PERSON_LOGIN SET TODAY_CNT = 0, LOGIN_DATE = DEFAULT, LOGIN_USER = #{loginId}, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+	</update>
+	<update id="updateVisitCntAndTodayCnt">
+		UPDATE CUSTOM_PERSON_LOGIN SET VISIT_CNT = VISIT_CNT+1, TODAY_CNT = TODAY_CNT+1, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+	</update>
+	<update id="updatePoint">
+		UPDATE CUSTOM_PERSON_LOGIN SET POINT = POINT + 100, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+	</update>
+	<update id="updateCustomPersonLoginUserDel">
+		UPDATE CUSTOM_PERSON_LOGIN SET DELETE_DATE = DEFAULT, DELETE_USER = #{loginId} , LOGOUT_DATE = DEFAULT, LOGOUT_USER = #{loginId}  WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId};
+
+		UPDATE CUSTOM_PERSON SET DELETE_DATE = DEFAULT, DELETE_USER = #{customId} WHERE CUSTOM_ID = #{customId};
+
+		UPDATE CUSTOM_PERSON_HISTORY SET DELETE_DATE = DEFAULT, DELETE_USER = #{customId}, DELETE_OVER_FLG = 'PRAC' WHERE CUSTOM_ID = #{customId};
+
+	</update>
+	<update id="updateLogout">
+		UPDATE CUSTOM_PERSON_LOGIN SET LOGOUT_DATE = DEFAULT, LOGOUT_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL 
+	</update>
+	<select id="loginIdCheck" resultType="boolean">
+		SELECT IF(COUNT(LOGIN_ID) > 0, TRUE, FALSE) AS ISEXIST_ID FROM CUSTOM_PERSON_LOGIN WHERE LOGIN_ID = #{loginId};
+	</select>
+	<select id="emailCheck" resultType="boolean">
+		SELECT IF(COUNT(EMAIL) > 0, TRUE, FALSE) AS ISEXIST_EMAIL FROM CUSTOM_PERSON WHERE EMAIL = #{email}
+	</select>
+	<select id="juminNoCheck" resultType="boolean">
+		SELECT IF(COUNT(JUMIN_NO) > 0, TRUE, FALSE) AS ISEXIST_JUMIN_NO FROM CUSTOM_PERSON WHERE JUMIN_NO = #{juminNo} -- Unique key(jumin_no) indexing
+	</select>
+	<select id="obtainCustomId" resultType="int">
+		SELECT IFNULL(MAX(CUSTOM_ID) + 1, (CASE WHEN #{customKindCode} = 1 OR #{customKindCode} = 2 THEN 100 ELSE #{customKindCode} END) * 100000 + 1) AS OBT_CUSTOM_ID  
+		FROM CUSTOM_PERSON 
+		WHERE SUBSTRING(CUSTOM_ID, 1, 3) = CASE WHEN #{customKindCode} = 1 OR #{customKindCode} = 2 THEN 100 ELSE #{customKindCode} END; 
+		-- primary key(custom_id) indexing을 조건절에서 SUBSTRING에 사용하면 조회속도가 높을것 같기도 하는데요
+	</select>
+	<insert id="insertCustomPersonAndCustomPersonLogin">
+		INSERT INTO CUSTOM_PERSON VALUES ( 
+			DEFAULT, 
+			#{personDto.custom_id},   -- create_user	
+			#{personDto.custom_nm},  
+			2,
+			#{personDto.custom_kind_cd},  
+			'P',
+		<if test='personDto.job == "기타" '>
+			#{personDto.txt_job},  
+		</if>
+		<if test='personDto.job != "기타" '>
+			#{personDto.job},  
+		</if>
+			#{personDto.hobby},  
+			#{personDto.birth_date},  
+			#{personDto.jumin_no},  
+			#{personDto.gender},  
+			#{personDto.tel_no},  
+			#{personDto.hp_no},  
+			#{personDto.email},  
+			#{personDto.post_code},  
+			#{personDto.road_addr},  
+			#{personDto.extra_addr},  
+			#{personDto.detail_addr},  
+			#{personDto.memo},  
+			DEFAULT, 
+			#{personDto.custom_id},   -- create_user	
+			NULL, 
+			NULL, 
+			NULL, 
+			NULL );
+
+		INSERT INTO CUSTOM_PERSON_HISTORY VALUES ( DEFAULT, #{personDto.custom_id}, #{personDto.custom_kind_cd}, #{personDto.kind_name}, 'P', #{personDto.grade_name}, #{personDto.gender}, DEFAULT, DEFAULT, #{personDto.custom_id}, NULL, NULL, NULL, NULL);
+	
+		INSERT INTO CUSTOM_PERSON_LOGIN VALUES ( DEFAULT, #{loginDto.login_id}, #{loginDto.encrypt_pwd}, #{loginDto.custom_id}, 'P', DEFAULT, DEFAULT, DEFAULT, NULL, NULL, NULL, NULL, DEFAULT, #{loginDto.login_id}, NULL, NULL, NULL, NULL);
+
+	</insert>
+	<select id="searchCustomPerson" resultType="com.spring.javagreenS_khv.dto.CustomPersonDTO">
+		SELECT 
+			SEQ, --  unique key 
+			CUSTOM_ID, --  primary key
+			CUSTOM_NM, 
+			CUSTOM_KIND_GROUP_CODE,
+			CUSTOM_KIND_CD, -- foreign key (코드TBL)
+			(SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = THIS.CUSTOM_KIND_CD) AS KIND_NAME, -- foreign key (코드TBL)
+			CUSTOM_GRADE, -- foreign key (코드TBL)
+			(SELECT GRADE_NAME FROM CUSTOM_GRADE WHERE GRADE_CODE = THIS.CUSTOM_GRADE) AS GRADE_NAME, -- foreign key (코드TBL)
+			JOB, 
+			HOBBY, 
+			BIRTH_DATE,
+			JUMIN_NO,
+			GENDER,
+			TEL_NO,
+			HP_NO, 
+			EMAIL, 
+			POST_CODE, 
+			ROAD_ADDR, 
+			EXTRA_ADDR,
+			DETAIL_ADDR, 
+			MEMO,
+			CREATE_DATE, 
+			CREATE_USER, 
+			UPDATE_DATE, 
+			UPDATE_USER, 
+			DELETE_DATE, 
+			DELETE_USER 
+		FROM CUSTOM_PERSON AS THIS 
+		WHERE CUSTOM_ID = #{customId} 
+		  AND DELETE_DATE IS NULL -- primary key(SEQ) indexing	
+	</select>
+	<update id="updateCustomPerson">
+		UPDATE CUSTOM_PERSON SET 
+			CUSTOM_NM = #{personDto.custom_nm}, 
+			CUSTOM_KIND_CD = #{personDto.custom_kind_cd}, 
+			
+		<if test='personDto.job == "기타" '>
+			JOB = #{personDto.txt_job}, 
+		</if>
+		<if test='personDto.job != "기타" '>
+			JOB = #{personDto.job}, 
+		</if>
+			
+			HOBBY = #{personDto.hobby},  
+			BIRTH_DATE = #{personDto.birth_date},  
+			JUMIN_NO = #{personDto.jumin_no}, 
+			GENDER = #{personDto.gender}, 
+			TEL_NO = #{personDto.tel_no}, 
+			HP_NO = #{personDto.hp_no}, 
+			EMAIL = #{personDto.email}, 
+			POST_CODE = #{personDto.post_code}, 
+			ROAD_ADDR = #{personDto.road_addr}, 
+			EXTRA_ADDR = #{personDto.extra_addr}, 
+			DETAIL_ADDR = #{personDto.detail_addr}, 
+			MEMO = #{personDto.memo}, 
+			UPDATE_DATE = DEFAULT, 
+			UPDATE_USER = #{personDto.custom_id} 
+		WHERE CUSTOM_ID = #{personDto.custom_id} 
+		  AND DELETE_DATE IS NULL;
+		  
+		UPDATE CUSTOM_PERSON_HISTORY SET 
+			CUSTOM_KIND_CD = #{personDto.custom_kind_cd}, 
+			GENDER = #{personDto.gender}, 
+			UPDATE_DATE = DEFAULT, 
+			UPDATE_USER = #{personDto.custom_id} 
+		WHERE CUSTOM_ID = #{personDto.custom_id} 
+		  AND DELETE_DATE IS NULL;
+
+	</update>
+</mapper>

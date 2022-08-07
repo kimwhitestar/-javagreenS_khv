@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.3.xsd
+		http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+		
+	<!-- 데이타베이스 연결 (JDBC) -->
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<!-- 1. query여러개 한번에 실행 : 멀티쿼리허용true -->
+		<!-- (멀티쿼리는 db에서 not null column이지만 무조건 입력됨, 길이와 타입은 입력 에러발생, 트랜잭션은 아직 적용안된 상태) -->
+		<!-- 2. 아래 transactionManager bean 추가 -->
+		<!-- 3. 트랜잭션 어노테이션 추가 -->
+		<property name="url" value="jdbc:mysql://localhost:3306/javagreen_khv?allowMultiQueries=true" />
+		<property name="username" value="root" />
+		<property name="password" value="1234" />
+	</bean>
+
+	<!-- MyBatis Spring 연결 (모듈) : mapper에 sql(~sql.xml) 정보설정(DAO에서 sql작성안함)-->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="mapperLocations" value="classpath:mappers/**/*Mapper.xml" />
+	</bean>
+
+	<!-- mapper정보 설정후 불러서 사용하기위한 의존객체 설정-->
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+	</bean>
+
+	<!-- mybatis가 주입해줘야하는 dao객체가 있는 곳 설정 -->
+	<mybatis-spring:scan base-package="com.spring.javagreenS_khv.dao"/>
+		
+	<!-- 트랜잭션을 위한 bean 등록 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<!-- 트랜잭션 필요한 상황에서 어노테이션 추가 설정 -->
+	<tx:annotation-driven/>		
+</beans>

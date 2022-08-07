@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.javagreenS_khv.dao.AdminDAO">
+
+
+	<select id="searchAdminLogin" resultType="com.spring.javagreenS_khv.vo.AdminLoginVO">
+		select *, (select ifnull(levelName, '') from adminlevel where level = this.level) as levelName 
+		from adminLogin as this
+		where deleteDate is null 
+		and loginId = #{loginId} 
+		and loginPwd = #{encryptPwd} 
+		order by idx desc;
+	</select>
+	<update id="updateLogout">
+		update adminLogin set logoutDate = default, logoutUser = #{loginId} where loginId = #{loginId};
+	</update>
+	
+	<select id="searchCustomCompDeleteList" resultType="com.spring.javagreenS_khv.dto.CustomCompDeleteDTO">
+		SELECT DEL_PRAC.LOGIN_ID LOGIN_ID, 
+			DEL_PRAC.CUSTOM_ID CUSTOM_ID,
+			DEL_PRAC.CUSTOM_NM CUSTOM_NM, 
+			DEL_PRAC.COMPANY_NO COMPANY_NO, 
+			DEL_PRAC.OVER_DAYS_USER_DEL OVER_DAYS_USER_DEL,
+			IF(DEL_OVER.CUSTOM_ID IS NULL, 'PRAC', 'OVER') OVER_FLG, 
+			DEL_PRAC.DELETE_DATE DELETE_DATE, 
+			DEL_PRAC.DELETE_USER DELETE_USER 
+		FROM 
+			(SELECT A.LOGIN_ID, A.CUSTOM_ID, B.CUSTOM_NM, B.COMPANY_NO, TIMESTAMPDIFF(DAY, A.DELETE_DATE, NOW()) AS OVER_DAYS_USER_DEL, A.DELETE_DATE, A.DELETE_USER   
+			FROM CUSTOM_COMP_LOGIN A, CUSTOM_COMP B
+			WHERE A.DELETE_DATE IS NOT NULL -- 탈퇴회원(임시탈퇴자, 로그인삭제일) 
+			AND A.CUSTOM_ID = B.CUSTOM_ID
+			<if test='overFlg == "OVER" '>
+				<![CDATA[ AND TIMESTAMPDIFF(DAY, A.DELETE_DATE, NOW()) >= 30 ]]> 
+			</if>
+			<if test='overFlg == "PRAC" '>
+				<![CDATA[ AND TIMESTAMPDIFF(DAY, A.DELETE_DATE, NOW()) < 30 ]]> 
+			</if>
+			) AS DEL_PRAC 
+		LEFT OUTER JOIN 
+			(SELECT CUSTOM_ID 
+			FROM CUSTOM_COMP_LOGIN 
+			WHERE TIMESTAMPDIFF(DAY, DELETE_DATE, NOW()) >= 30 
+			) AS DEL_OVER 
+		ON DEL_PRAC.CUSTOM_ID = DEL_OVER.CUSTOM_ID 
+		ORDER BY OVER_FLG ASC, OVER_DAYS_USER_DEL DESC;
+	</select>
+	
+	<select id="searchCustomPersonDeleteList" resultType="com.spring.javagreenS_khv.dto.CustomPersonDeleteDTO">
+		SELECT DEL_PRAC.LOGIN_ID LOGIN_ID, 
+			DEL_PRAC.CUSTOM_ID CUSTOM_ID,
+			DEL_PRAC.CUSTOM_NM CUSTOM_NM, 
+			DEL_PRAC.BIRTH_DATE BIRTH_DATE, 
+			DEL_PRAC.OVER_DAYS_USER_DEL OVER_DAYS_USER_DEL,
+			IF(DEL_OVER.CUSTOM_ID IS NULL, 'PRAC', 'OVER') OVER_FLG, 
+			DEL_PRAC.DELETE_DATE DELETE_DATE, 
+			DEL_PRAC.DELETE_USER DELETE_USER 
+		FROM 
+			(SELECT A.LOGIN_ID, A.CUSTOM_ID, B.CUSTOM_NM, B.BIRTH_DATE, TIMESTAMPDIFF(DAY, A.DELETE_DATE, NOW()) AS OVER_DAYS_USER_DEL, A.DELETE_DATE, A.DELETE_USER   
+			FROM CUSTOM_PERSON_LOGIN A, CUSTOM_PERSON B
+			WHERE A.DELETE_DATE IS NOT NULL -- 탈퇴회원(임시탈퇴자, 로그인삭제일) 
+			AND A.CUSTOM_ID = B.CUSTOM_ID
+			<if test='overFlg == "OVER" '>
+				<![CDATA[ AND TIMESTAMPDIFF(DAY, A.DELETE_DATE, NOW()) >= 30 ]]> 
+			</if>
+			<if test='overFlg == "PRAC" '>
+				<![CDATA[ AND TIMESTAMPDIFF(DAY, A.DELETE_DATE, NOW()) < 30 ]]> 
+			</if>
+			) AS DEL_PRAC 
+		LEFT OUTER JOIN 
+			(SELECT CUSTOM_ID 
+			FROM CUSTOM_PERSON_LOGIN 
+			WHERE TIMESTAMPDIFF(DAY, DELETE_DATE, NOW()) >= 30 
+			) AS DEL_OVER 
+		ON DEL_PRAC.CUSTOM_ID = DEL_OVER.CUSTOM_ID 
+		ORDER BY OVER_FLG ASC, OVER_DAYS_USER_DEL DESC;
+	</select>
+	
+	<delete id="deleteCustomCompDelete">
+		DELETE FROM CUSTOM_COMP_LOGIN WHERE CUSTOM_ID = #{customId} AND DELETE_DATE IS NOT NULL; -- UNIQUE KEY 기본제공되는 INDEX로 삭제
+		
+		DELETE FROM CUSTOM_COMP WHERE CUSTOM_ID = #{customId} AND DELETE_DATE IS NOT NULL; -- PRIMARY KEY 기본제공되는 INDEX로 삭제
+		
+		UPDATE CUSTOM_COMP_HISTORY SET DELETE_DATE = DEFAULT, DELETE_USER = 'ADMIN' WHERE CUSTOM_ID = #{customId} AND DELETE_OVER_FLG IN ('PRAC', 'OVER');  -- PRIMARY KEY 기본제공되는 INDEX로 수정
+		
+	</delete>
+	<delete id="deleteCustomPersonDelete">
+		DELETE FROM CUSTOM_PERSON_LOGIN WHERE CUSTOM_ID = #{customId} AND DELETE_DATE IS NOT NULL; -- UNIQUE KEY 기본제공되는 INDEX로 삭제
+
+		DELETE FROM CUSTOM_PERSON WHERE CUSTOM_ID = #{customId} AND DELETE_DATE IS NOT NULL; -- PRIMARY KEY 기본제공되는 INDEX로 삭제
+		
+		UPDATE CUSTOM_PERSON_HISTORY SET DELETE_DATE = DEFAULT, DELETE_USER = 'ADMIN' WHERE CUSTOM_ID = #{customId} AND DELETE_OVER_FLG IN ('PRAC', 'OVER');  -- PRIMARY KEY 기본제공되는 INDEX로 수정
+
+	</delete>
+
+	<!-- 가입 1개월차 기본조건 -->
+	<select id="searchRecentlyEntryCustomCompList" resultType="com.spring.javagreenS_khv.dto.CustomCompLoginDTO">
+
+		SELECT A.SEQ AS SEQ, A.LOGIN_ID AS LOGIN_ID, B.CUSTOM_NM_SHORT AS CUSTOM_NM_SHORT, (SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = B.CUSTOM_KIND_CD) AS CUSTOM_KIND_NM, A.CREATE_DATE AS CREATE_DATE  
+		FROM CUSTOM_COMP_LOGIN A, CUSTOM_COMP B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<![CDATA[ AND DATE_SUB(NOW(), INTERVAL 1 MONTH ) <= A.CREATE_DATE   ]]> 
+		ORDER BY SEQ DESC LIMIT 0, 5;
+	</select>
+	
+	<!-- 최근로그인 1개월차 기본조건 -->
+	<select id="searchRecentlyLoginCustomCompList" resultType="com.spring.javagreenS_khv.dto.CustomCompLoginDTO">
+		SELECT A.SEQ AS SEQ, A.LOGIN_ID AS LOGIN_ID, B.CUSTOM_NM_SHORT AS CUSTOM_NM_SHORT, (SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = B.CUSTOM_KIND_CD) AS CUSTOM_KIND_NM, A.LOGIN_DATE AS LOGIN_DATE  
+		FROM CUSTOM_COMP_LOGIN A, CUSTOM_COMP B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<![CDATA[ AND DATE_SUB(NOW(), INTERVAL 1 MONTH ) <= A.LOGIN_DATE   ]]> 
+		ORDER BY LOGIN_DATE DESC LIMIT 0, 5;
+	</select>
+	<!-- 임시회원탈퇴 기본조건 -->
+	<select id="searchPracDeleteCustomCompList" resultType="com.spring.javagreenS_khv.dto.CustomCompLoginDTO">
+		SELECT A.SEQ AS SEQ, A.LOGIN_ID AS LOGIN_ID, B.CUSTOM_NM_SHORT AS CUSTOM_NM_SHORT, (SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = B.CUSTOM_KIND_CD) AS CUSTOM_KIND_NM, A.DELETE_DATE AS DELETE_DATE  
+		FROM CUSTOM_COMP_LOGIN A, CUSTOM_COMP B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<![CDATA[ AND DATE_SUB(NOW(), INTERVAL 1 MONTH ) <= A.DELETE_DATE   ]]> 
+		ORDER BY DELETE_DATE DESC LIMIT 0, 5;
+	</select>
+	<!-- 가입 1개월차 기본조건 -->
+	<select id="searchRecentlyEntryCustomPersonList" resultType="com.spring.javagreenS_khv.dto.CustomPersonLoginDTO">
+		SELECT A.SEQ AS SEQ, A.LOGIN_ID AS LOGIN_ID, B.CUSTOM_NM AS CUSTOM_NM, (SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = B.CUSTOM_KIND_CD) AS CUSTOM_KIND_NM, A.CREATE_DATE AS CREATE_DATE  
+		FROM CUSTOM_PERSON_LOGIN A, CUSTOM_PERSON B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<![CDATA[ AND DATE_SUB(NOW(), INTERVAL 1 MONTH ) <= A.CREATE_DATE   ]]> 
+		ORDER BY SEQ DESC LIMIT 0, 5;
+	</select>
+	<!-- 최근로그인 1개월차 기본조건 -->
+	<select id="searchRecentlyLoginCustomPersonList" resultType="com.spring.javagreenS_khv.dto.CustomPersonLoginDTO">
+		SELECT A.SEQ AS SEQ, A.LOGIN_ID AS LOGIN_ID, B.CUSTOM_NM AS CUSTOM_NM, (SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = B.CUSTOM_KIND_CD) AS CUSTOM_KIND_NM, A.LOGIN_DATE AS LOGIN_DATE  
+		FROM CUSTOM_PERSON_LOGIN A, CUSTOM_PERSON B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<![CDATA[ AND DATE_SUB(NOW(), INTERVAL 1 MONTH ) <= A.LOGIN_DATE   ]]> 
+		ORDER BY LOGIN_DATE DESC LIMIT 0, 5;
+	</select>
+	<!-- 임시회원탈퇴 기본조건 -->
+	<select id="searchPracDeleteCustomPersonList" resultType="com.spring.javagreenS_khv.dto.CustomPersonLoginDTO">
+		SELECT A.SEQ AS SEQ, A.LOGIN_ID AS LOGIN_ID, B.CUSTOM_NM AS CUSTOM_NM, (SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = B.CUSTOM_KIND_CD) AS CUSTOM_KIND_NM, A.DELETE_DATE AS DELETE_DATE  
+		FROM CUSTOM_PERSON_LOGIN A, CUSTOM_PERSON B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<![CDATA[ AND DATE_SUB(NOW(), INTERVAL 1 MONTH ) <= A.DELETE_DATE  ]]> 
+		ORDER BY DELETE_DATE DESC LIMIT 0, 5;
+	</select>
+	
+	
+	
+	<!-- 통계 자료 -->
+	<!-- 기업고객 고객구분별 가입회원수, 삭제회원수 통계 -->
+	<select id="searchEntryAndDeleteCustomCompStatsList1" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT 
+			SUB_ENTRY.CUSTOM_KIND_NM as customKindNm, 
+			SUB_ENTRY.CNT as entryCnt, 
+			SUB_DELETE.CNT as deleteCnt 
+		FROM 
+			(     
+				SELECT CUSTOM_KIND_NM, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_COMP_HISTORY 
+				GROUP BY CUSTOM_KIND_CD     
+			) AS SUB_ENTRY 
+			LEFT OUTER JOIN 
+			(     
+				SELECT CUSTOM_KIND_NM, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_COMP_HISTORY 
+				WHERE DELETE_DATE IS NOT NULL   
+		        GROUP BY CUSTOM_KIND_CD     
+			) AS SUB_DELETE 
+			ON SUB_ENTRY.CUSTOM_KIND_NM = SUB_DELETE.CUSTOM_KIND_NM
+		ORDER BY customKindNm;
+	</select>
+
+	<!-- 기업고객 고객등급별 가입회원수, 삭제회원수 통계 -->
+	<select id="searchEntryAndDeleteCustomCompStatsList2" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT 
+			SUB_ENTRY.GRADE_NAME as gradeName, 
+			SUB_ENTRY.CNT as entryCnt, 
+			SUB_DELETE.CNT as deleteCnt 
+		FROM 
+			(     
+				SELECT GRADE_NAME, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_COMP_HISTORY 
+				GROUP BY CUSTOM_GRADE     
+			) AS SUB_ENTRY 
+			LEFT OUTER JOIN 
+			(     
+				SELECT GRADE_NAME, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_COMP_HISTORY 
+				WHERE DELETE_DATE IS NOT NULL   
+		        GROUP BY CUSTOM_GRADE     
+			) AS SUB_DELETE 
+			ON SUB_ENTRY.GRADE_NAME = SUB_DELETE.GRADE_NAME
+		ORDER BY gradeName;
+	</select>
+	
+	<!-- 기업고객 년별 가입회원 통계 -->
+	<select id="searchEntryCustomCompStatsList" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT YEAR(CREATE_DATE) as yyyy, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_COMP_HISTORY 
+		GROUP BY yyyy
+		ORDER BY yyyy;
+	</select>
+	
+	<!-- 기업고객 고객구분별 가입회원 통계 -->
+	<select id="searchEntryCustomCompStatsList1" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT CUSTOM_KIND_NM as customKindNm, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_COMP_HISTORY 
+		GROUP BY CUSTOM_KIND_CD 
+		ORDER BY CUSTOM_KIND_NM;
+	</select>
+	
+	<!-- 기업고객 고객등급별 가입회원 통계 -->
+	<select id="searchEntryCustomCompStatsList2" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT GRADE_NAME as gradeName, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_COMP_HISTORY 
+		GROUP BY CUSTOM_GRADE 
+		ORDER BY GRADE_NAME;
+	</select>
+	
+	<!-- 기업고객 년월별 삭제회원 통계 -->
+	<select id="searchDeleteCustomCompStatsList" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT YEAR(DELETE_DATE) as yyyy, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_COMP_HISTORY 
+		WHERE DELETE_DATE IS NOT NULL 
+		GROUP BY yyyy 
+		ORDER BY yyyy;
+	</select>
+
+	<!-- 기업고객 고객구분별 삭제회원 통계 -->
+	<select id="searchDeleteCustomCompStatsList1" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT CUSTOM_KIND_NM as customKindNm, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_COMP_HISTORY 
+		WHERE DELETE_DATE IS NOT NULL 
+		GROUP BY CUSTOM_KIND_CD  
+		ORDER BY CUSTOM_KIND_NM;
+	</select>
+	
+	<!-- 기업고객 고객등급별 삭제회원 통계 -->
+	<select id="searchDeleteCustomCompStatsList2" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT GRADE_NAME as gradeName, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_COMP_HISTORY 
+		WHERE DELETE_DATE IS NOT NULL 
+		GROUP BY CUSTOM_GRADE 
+		ORDER BY GRADE_NAME;
+	</select>
+
+	
+	<!-- 개인고객 고객구분별 가입회원수, 삭제회원수 통계 -->
+	<select id="searchEntryAndDeleteCustomPersonStatsList1" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT 
+			SUB_ENTRY.CUSTOM_KIND_NM as customKindNm, 
+			SUB_ENTRY.CNT as entryCnt, 
+			SUB_DELETE.CNT as deleteCnt 
+		FROM 
+			(	SELECT CUSTOM_KIND_NM, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_PERSON_HISTORY 
+				
+				GROUP BY CUSTOM_KIND_CD     
+			) AS SUB_ENTRY 
+			LEFT OUTER JOIN 
+			(	SELECT CUSTOM_KIND_NM, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_PERSON_HISTORY 
+				WHERE DELETE_DATE IS NOT NULL   
+		        GROUP BY CUSTOM_KIND_CD     
+			) AS SUB_DELETE 
+			ON SUB_ENTRY.CUSTOM_KIND_NM = SUB_DELETE.CUSTOM_KIND_NM
+		ORDER BY customKindNm;
+	</select>
+	
+	
+	<!-- 개인고객 고객등급별 가입회원수, 삭제회원수 통계 -->
+	<select id="searchEntryAndDeleteCustomPersonStatsList2" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT 
+			SUB_ENTRY.GRADE_NAME as gradeName, 
+			SUB_ENTRY.CNT as entryCnt, 
+			SUB_DELETE.CNT as deleteCnt 
+		FROM 
+			(
+				SELECT GRADE_NAME, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_PERSON_HISTORY 
+				GROUP BY CUSTOM_GRADE     
+			) AS SUB_ENTRY 
+			
+			LEFT OUTER JOIN 
+			
+			(	SELECT GRADE_NAME, COUNT(CUSTOM_ID) as CNT 
+				FROM CUSTOM_PERSON_HISTORY 
+				WHERE DELETE_DATE IS NOT NULL   
+		        GROUP BY CUSTOM_GRADE     
+			) AS SUB_DELETE 
+			
+			ON SUB_ENTRY.GRADE_NAME = SUB_DELETE.GRADE_NAME
+		ORDER BY gradeName;
+	</select>
+	
+	
+	
+	
+	<!-- 개인고객 년별 가입회원 통계 -->
+	<select id="searchEntryCustomPersonStatsList" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT YEAR(CREATE_DATE) as yyyy, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_PERSON_HISTORY 
+		GROUP BY yyyy
+		ORDER BY yyyy;
+	</select>
+	
+	<!-- 개인고객 고객구분별 가입회원 통계 -->
+	<select id="searchEntryCustomPersonStatsList1" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT CUSTOM_KIND_NM as customKindNm, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_PERSON_HISTORY 
+		GROUP BY CUSTOM_KIND_CD 
+		ORDER BY CUSTOM_KIND_NM;
+	</select>
+
+	<!-- 개인고객 고객등급별 가입회원 통계 -->
+	<select id="searchEntryCustomPersonStatsList2" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT GRADE_NAME as gradeName, COUNT(CUSTOM_ID) as cnt 
+
+		FROM CUSTOM_PERSON_HISTORY 
+		GROUP BY CUSTOM_GRADE 
+		ORDER BY GRADE_NAME;
+	</select>
+	
+	<!-- 개인고객 년월별 삭제회원 통계 -->
+	<select id="searchDeleteCustomPersonStatsList" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT YEAR(DELETE_DATE) as yyyy, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_PERSON_HISTORY 
+		WHERE DELETE_DATE IS NOT NULL 
+		GROUP BY yyyy 
+		ORDER BY yyyy;
+	</select>
+	
+	<!-- 개인고객 고객구분별 삭제회원 통계 -->
+	<select id="searchDeleteCustomPersonStatsList1" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+		SELECT CUSTOM_KIND_NM as customKindNm, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_PERSON_HISTORY 
+		WHERE DELETE_DATE IS NOT NULL 
+		GROUP BY CUSTOM_KIND_CD  
+		ORDER BY CUSTOM_KIND_NM;
+	</select>
+
+
+	<!-- 개인고객 고객등급별 삭제회원 통계 -->
+	<select id="searchDeleteCustomPersonStatsList2" resultType="com.spring.javagreenS_khv.vo.CustomStatsVO">
+
+		SELECT GRADE_NAME as gradeName, COUNT(CUSTOM_ID) as cnt 
+		FROM CUSTOM_PERSON_HISTORY 
+		WHERE DELETE_DATE IS NOT NULL 
+		GROUP BY CUSTOM_GRADE 
+		ORDER BY GRADE_NAME;
+	</select>
+	
+	<update id="updateCustomCompGrade"><!-- 기업고객 고객등급수정 -->
+		UPDATE CUSTOM_COMP_LOGIN SET CUSTOM_GRADE = #{customGradeCd} where CUSTOM_ID = #{customId};
+		UPDATE CUSTOM_COMP SET CUSTOM_GRADE = #{customGradeCd} where CUSTOM_ID = #{customId};
+		UPDATE CUSTOM_COMP_HISTORY SET CUSTOM_GRADE = #{customGradeCd} where CUSTOM_ID = #{customId};
+	</update>
+	
+	<update id="updateCustomPersonGrade"><!-- 개인고객 고객등급수정 -->
+		UPDATE CUSTOM_PERSON_LOGIN SET CUSTOM_GRADE = #{customGradeCd} where CUSTOM_ID = #{customId};
+		UPDATE CUSTOM_PERSON SET CUSTOM_GRADE = #{customGradeCd} where CUSTOM_ID = #{customId};
+		UPDATE CUSTOM_PERSON_HISTORY SET CUSTOM_GRADE = #{customGradeCd} where CUSTOM_ID = #{customId};
+	</update>
+	<select id="searchCustomCompJoinList" resultType="com.spring.javagreenS_khv.vo.CustomCompSearchVO">
+		SELECT 
+			A.SEQ as seq, 
+			A.CUSTOM_ID as customId, 
+			A.CUSTOM_NM as customName, 
+			A.CUSTOM_NM_SHORT as customNameShort, 
+			A.CUSTOM_KIND_CD as customKindCode, 
+			(SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = A.CUSTOM_KIND_CD) as customKindName, 
+			A.CUSTOM_GRADE as customGrade, 
+			(SELECT GRADE_NAME FROM CUSTOM_GRADE WHERE GRADE_CODE = A.CUSTOM_GRADE) as gradeName,  
+			A.ESTBL_DATE as estblDate, 
+			A.COMPANY_NO as companyNo, 
+			A.EMAIL as email, 
+			A.OFFICE as office, 
+			A.TEL_NO as telNo,
+			A.HP_NO as hpNo, 
+			A.POST_CODE as postcode, 
+			A.ROAD_ADDR as roadAddress, 
+			A.EXTRA_ADDR as extraAddress,
+			A.DETAIL_ADDR as detailAddress, 
+			A.MEMO as memo,
+			A.CUSTOM_IMG_FILE_NAME as customImgFileName,  
+			A.CREATE_DATE as createDate, 
+			A.CREATE_USER as createUser, 
+			A.UPDATE_DATE as updateDate, 
+			A.UPDATE_USER as updateUser, 
+			A.DELETE_DATE as deleteDate, 
+			A.DELETE_USER as deleteUser,
+			B.LOGIN_ID as loginId,  
+			B.LOGIN_PWD as encryptPwd,
+			B.POINT as point, 
+			B.VISIT_CNT as visitCnt, 
+			B.TODAY_CNT as todayCnt, 
+			B.LOGIN_DATE as loginDate, 
+			B.LOGIN_USER as loginUser, 
+			B.LOGOUT_DATE as logoutDate, 
+			B.LOGOUT_USER as logoutUser, 
+			B.CREATE_DATE as createDate2,
+			B.CREATE_USER as createUser2, 
+			B.UPDATE_DATE as updateDate2, 
+			B.UPDATE_USER as updateUser2, 
+			B.DELETE_DATE as deleteDate2, 
+			B.DELETE_USER as deleteUser2
+		FROM CUSTOM_COMP A, CUSTOM_COMP_LOGIN B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<if test="customGrade != '' "> AND A.CUSTOM_GRADE = #{customGrade} </if>
+		AND A.DELETE_DATE IS NULL;
+	</select>
+	<select id="searchCustomPersonJoinList" resultType="com.spring.javagreenS_khv.vo.CustomPersonSearchVO">
+		SELECT 
+			A.SEQ as seq, 
+			A.CUSTOM_ID as customId, 
+			A.CUSTOM_NM as customName, 
+			A.CUSTOM_KIND_CD as customKindCode, 
+			(SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = A.CUSTOM_KIND_CD) as customKindName, 
+			A.CUSTOM_GRADE as customGrade, 
+			(SELECT GRADE_NAME FROM CUSTOM_GRADE WHERE GRADE_CODE = A.CUSTOM_GRADE) as gradeName,  
+			A.JOB as job, 
+			A.HOBBY as hobby, 
+			A.BIRTH_DATE as birthDate, 
+			A.JUMIN_NO as juminNo, 
+			A.GENDER as gender, 
+			A.TEL_NO as telNo,
+			A.HP_NO as hpNo, 
+			A.EMAIL as email, 
+			A.POST_CODE as postcode, 
+			A.ROAD_ADDR as roadAddress, 
+			A.EXTRA_ADDR as extraAddress,
+			A.DETAIL_ADDR as detailAddress, 
+			A.MEMO as memo,
+			A.CREATE_DATE as createDate, 
+			A.CREATE_USER as createUser, 
+			A.UPDATE_DATE as updateDate, 
+			A.UPDATE_USER as updateUser, 
+			A.DELETE_DATE as deleteDate, 
+			A.DELETE_USER as deleteUser,
+			B.LOGIN_ID as loginId,  
+			B.LOGIN_PWD as encryptPwd,
+			B.POINT as point, 
+			B.VISIT_CNT as visitCnt, 
+			B.TODAY_CNT as todayCnt, 
+			B.LOGIN_DATE as loginDate, 
+			B.LOGIN_USER as loginUser, 
+			B.LOGOUT_DATE as logoutDate, 
+			B.LOGOUT_USER as logoutUser, 
+			B.CREATE_DATE as createDate2,
+			B.CREATE_USER as createUser2, 
+			B.UPDATE_DATE as updateDate2, 
+			B.UPDATE_USER as updateUser2, 
+			B.DELETE_DATE as deleteDate2, 
+			B.DELETE_USER as deleteUser2
+		FROM CUSTOM_PERSON A, CUSTOM_PERSON_LOGIN B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		<if test="customGrade != '' "> AND A.CUSTOM_GRADE = #{customGrade} </if>
+		AND A.DELETE_DATE IS NULL;
+	</select>
+</mapper>

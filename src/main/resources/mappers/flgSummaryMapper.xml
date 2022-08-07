@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.javagreenS_khv.dao.FlgSummaryDAO">
+	<select id="searchFlg" resultType="com.spring.javagreenS_khv.dto.FlgSummaryDTO">
+		SELECT FLG_CD, FLG_NM, DEL_FLAG FROM FLG_SUMMARY WHERE FLG_CD = #{flgCd} AND MENU_CD = #{menuCd} AND SUB_MENU_CD = #{subMenuCd} ;
+	</select>
+</mapper>

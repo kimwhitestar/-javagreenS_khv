@@ -1,0 +1,50 @@
+1. ckeditor_4.19.0_standard.zip 다운받기
+ckeditor4 standard package download : https://ckeditor.com/ckeditor-4/download/
+
+2. ckeditor_4.19.0_standard.zip 압축풀기
+I:\JavaGreen\springframework\works\javagreenS\src\main\webapp\resources\폴더 밑에
+
+3. data 폴더 생성
+I:\JavaGreen\springframework\works\javagreenS\src\main\webapp\resources\폴더 밑에
+
+4. ckeditor 폴더 생성
+I:\JavaGreen\springframework\works\javagreenS\src\main\webapp\resources\data\폴더 밑에
+
+5. 실제db에 저장될 image폴더를 메뉴별로 폴더 생성
+I:\JavaGreen\springframework\works\javagreenS\src\main\webapp\resources
+\data\ckeditor\board\
+\data\ckeditor\pds\
+\data\ckeditor\member\
+
+
+6. servlet-context.xml의 FileUpload 라이브러리 최대용량과 저장폴더 수정 추가
+	<!-- FileUpload 라이브러리 등록(용량제한Class) -->
+	<beans:bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<beans:property name="maxUploadSize" value="20971520" /><!-- 20MB -->
+		<beans:property name="defaultEncoding" value="utf-8" />
+	</beans:bean>
+
+	<resources mapping="/ckeditor/**" location="/resources/ckeditor/" /><!-- 라이브러리에서 호출시 -->
+
+7. boardInput.jsp화일에 js추가
+    <script src="${ctxPath}/ckeditor/ckeditor.js"></script>
+
+8. boardInput.jsp화일에 textarea태그 content(글내용)영역의 id를 CKEDITOR로 수정, script추가
+      <div class="form-group">
+      <label for="content">내용</label>
+      <textarea rows="5" class="form-control" name="content" id="CKEDITOR" placeholder="내용을 입력하세요." required ></textarea>
+      <script>
+      	CKEDITOR.replace("content", {
+      		height:500px,
+      		filebrowserUploadUrl : "${ctxPath}/study/imageUpload", //사진 1장
+      		uploadUrl : "${ctxPath}/study/imageUpload" //사진 여러장 드래그
+      	});
+      </script>
+      <div class="valid-feedback"></div>
+      <div class="invalid-feedback">내용은 필수 입력사항입니다.</div>
+    </div>
+  
+
+  
+  
+  9. StudyControlle성등 작성

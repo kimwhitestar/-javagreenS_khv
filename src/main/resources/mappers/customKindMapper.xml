@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.javagreenS_khv.dao.CustomKindDAO">
+<select id="searchCustomKindList" resultType="com.spring.javagreenS_khv.dto.CustomKindDTO">
+	SELECT 
+		 CUSTOM_KIND_CD, -- primary key (pk 기본인덱싱으로 정렬되어 있어 order by안함)
+		 CUSTOM_KIND_NM  
+	FROM CUSTOM_KIND 
+	WHERE CUSTOM_KIND_CD > 2 ;
+</select>
+</mapper>

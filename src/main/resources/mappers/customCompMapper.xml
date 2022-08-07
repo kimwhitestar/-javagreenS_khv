@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.spring.javagreenS_khv.dao.CustomCompDAO">
+<!-- 수정 <mapper namespace="org.mybatis.example.BlogMapper"></mapper> -->
+	<delete id="kakaoEx2Delete">
+		DELETE FROM KAKAOADDRESS WHERE MAPADDRESS = #{address} 
+	</delete>
+	<select id="searchAddressName" resultType="com.spring.javagreenS_khv.vo.KakaoAddressVO">
+		SELECT * FROM KAKAOADDRESS WHERE MAPADDRESS = #{address} 
+	</select>
+	<insert id="insertAddressName">
+		INSERT INTO KAKAOADDRESS VALUES (#{vo.customid},#{vo.mapaddress},#{vo.latitude},#{vo.longitude})
+	</insert>
+	<select id="searchAddressNameList" resultType="com.spring.javagreenS_khv.vo.KakaoAddressVO">
+		SELECT * FROM KAKAOADDRESS ORDER BY MAPADDRESS;
+	</select>
+	
+	<insert id="insertQrCode"> INSERT INTO QRCODE VALUES (DEFAULT, #{customId}, #{qrCode}); </insert>
+	<select id="searchQrCode" resultType="int"> SELECT CUSTOM_ID FROM QRCODE WHERE QRCODE = #{qrCode}; </select>
+	<select id="searchLogin2" resultType="com.spring.javagreenS_khv.dto.CustomCompLoginDTO">
+
+		SELECT A.LOGIN_ID AS LOGIN_ID,  -- primary key
+			A.LOGIN_PWD AS LOGIN_PWD,
+			A.CUSTOM_ID AS CUSTOM_ID,  -- foreign key (custom_comp TBL)
+			B.CUSTOM_NM AS CUSTOM_NAME,  -- foreign key (코드TBL)
+			A.CUSTOM_GRADE AS CUSTOM_GRADE,
+			(SELECT GRADE_NAME FROM CUSTOM_GRADE WHERE GRADE_CODE = A.CUSTOM_GRADE) AS GRADE_NAME,  -- foreign key (코드TBL)
+			B.ROAD_ADDR AS ADDRESS, 
+			A.POINT AS POINT,
+			A.VISIT_CNT AS VISIT_CNT,
+			A.TODAY_CNT AS TODAY_CNT,
+			A.LOGIN_DATE AS LOGIN_DATE,
+			A.LOGOUT_DATE AS LOGOUT_DATE,
+			A.CREATE_DATE AS CREATE_DATE,
+			A.UPDATE_DATE AS UPDATE_DATE,
+			A.DELETE_DATE AS DELETE_DATE  
+		FROM CUSTOM_COMP_LOGIN A, CUSTOM_COMP B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		  AND A.CUSTOM_ID = #{customId} 
+		  AND A.DELETE_DATE IS NULL ;  -- primary key(LOGIN_ID) indexing	    
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="searchLogin" resultType="com.spring.javagreenS_khv.dto.CustomCompLoginDTO">
+		SELECT 
+			A.LOGIN_ID AS LOGIN_ID,  -- primary key
+			A.LOGIN_PWD AS LOGIN_PWD,
+			A.CUSTOM_ID AS CUSTOM_ID,  -- foreign key (custom_comp TBL)
+			B.CUSTOM_NM AS CUSTOM_NAME,  -- foreign key (코드TBL)
+			A.CUSTOM_GRADE AS CUSTOM_GRADE,
+			(SELECT GRADE_NAME FROM CUSTOM_GRADE WHERE GRADE_CODE = A.CUSTOM_GRADE) AS GRADE_NAME,  -- foreign key (코드TBL)
+			B.ROAD_ADDR AS ADDRESS, 
+			A.POINT AS POINT,
+			A.VISIT_CNT AS VISIT_CNT,
+			A.TODAY_CNT AS TODAY_CNT,
+			A.LOGIN_DATE AS LOGIN_DATE,
+			A.LOGOUT_DATE AS LOGOUT_DATE,
+			A.CREATE_DATE AS CREATE_DATE,
+			A.UPDATE_DATE AS UPDATE_DATE,
+			A.DELETE_DATE AS DELETE_DATE  
+		FROM CUSTOM_COMP_LOGIN A, CUSTOM_COMP B 
+		WHERE A.CUSTOM_ID = B.CUSTOM_ID 
+		  AND A.LOGIN_ID = #{loginId} AND A.LOGIN_PWD = #{encryptPwd} AND A.DELETE_DATE IS NULL ;  -- primary key(LOGIN_ID) indexing	    
+	</select>
+	
+	<update id="updateTodayCnt">
+		UPDATE CUSTOM_COMP_LOGIN SET TODAY_CNT = 0, LOGIN_DATE = DEFAULT, LOGIN_USER = #{loginId}, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+	</update>
+	
+	<update id="updateVisitCntAndTodayCnt">
+		UPDATE CUSTOM_COMP_LOGIN SET VISIT_CNT = VISIT_CNT+1, TODAY_CNT = TODAY_CNT+1, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+	</update>
+	
+	<update id="updatePoint">
+		UPDATE CUSTOM_COMP_LOGIN SET POINT = POINT + 100, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+	</update>
+	<update id="updateCustomCompLoginUserDel">
+		UPDATE CUSTOM_COMP_LOGIN SET DELETE_DATE = DEFAULT, DELETE_USER = #{loginId}, LOGOUT_DATE = DEFAULT, LOGOUT_USER = #{loginId}  WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId};
+
+		UPDATE CUSTOM_COMP SET DELETE_DATE = DEFAULT, DELETE_USER = #{customId} WHERE CUSTOM_ID = #{customId};
+
+		UPDATE CUSTOM_COMP_HISTORY SET DELETE_DATE = DEFAULT, DELETE_USER = #{customId}, DELETE_OVER_FLG = 'PRAC' WHERE CUSTOM_ID = #{customId};
+	</update>
+	<update id="updateLogout">
+		UPDATE CUSTOM_COMP_LOGIN SET LOGOUT_DATE = DEFAULT, LOGOUT_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+	</update>
+	<select id="loginIdCheck" resultType="boolean">
+		SELECT IF(COUNT(LOGIN_ID) > 0, TRUE, FALSE) AS ISEXIST_ID FROM CUSTOM_COMP_LOGIN WHERE LOGIN_ID = #{loginId}
+	</select>
+	<select id="companyNoCheck" resultType="boolean">
+		SELECT IF(COUNT(COMPANY_NO) > 0, TRUE, FALSE) AS ISEXIST_COMPANY_NO FROM CUSTOM_COMP WHERE COMPANY_NO = #{companyNo} -- Unique key(company_no) indexing
+	</select>
+	
+	<select id="emailCheck" resultType="boolean">
+		SELECT IF(COUNT(EMAIL) > 0, TRUE, FALSE) AS ISEXIST_EMAIL FROM CUSTOM_COMP WHERE EMAIL = #{email}
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	<select id="obtainCustomId" resultType="int">
+		SELECT IFNULL(MAX(CUSTOM_ID) + 1, (CASE WHEN #{customKindCode} = 1 OR #{customKindCode} = 2 THEN 100 ELSE #{customKindCode} END) * 100000 + 1) AS OBT_CUSTOM_ID  
+		FROM CUSTOM_COMP 
+		WHERE SUBSTRING(CUSTOM_ID, 1,3) = CASE WHEN #{customKindCode} = 1 OR #{customKindCode} = 2 THEN 100 ELSE #{customKindCode} END; 
+		-- primary key(custom_id) indexing을 조건절에서 SUBSTRING에 사용하면 조회속도가 높을것 같기도 하는데요
+	</select>
+	<insert id="insertCustomCompAndCustomCompLogin">
+ 		INSERT INTO CUSTOM_COMP VALUES ( 
+				DEFAULT, 
+				#{compDto.custom_id},  	
+				#{compDto.custom_nm},  
+				#{compDto.custom_nm_short},  
+				1,
+				#{compDto.custom_kind_cd},  
+				'O',
+				#{compDto.estbl_date},  
+				#{compDto.company_no}, 
+		<if test='compDto.office == "기타" '>
+				#{compDto.txt_office},  
+		</if>
+		<if test='compDto.office != "기타" '>
+				#{compDto.office},  
+		</if>
+				#{compDto.tel_no},  
+				#{compDto.hp_no},  
+				#{compDto.email},  
+				#{compDto.post_code},  
+				#{compDto.road_addr},  
+				#{compDto.extra_addr},  
+				#{compDto.detail_addr},  
+				#{compDto.memo},  
+				#{compDto.custom_img_file_name},  
+				DEFAULT, 
+				#{compDto.custom_id}, 
+				NULL, 
+				NULL, 
+				NULL, 
+				NULL );
+		 
+		INSERT INTO CUSTOM_COMP_HISTORY VALUES ( DEFAULT, #{compDto.custom_id}, #{compDto.custom_kind_cd}, #{compDto.kind_name}, 'O', #{compDto.grade_name}, DEFAULT, DEFAULT, #{compDto.custom_id}, NULL, NULL, NULL, NULL );
+
+ 		INSERT INTO CUSTOM_COMP_LOGIN VALUES ( DEFAULT, #{loginDto.login_id}, #{loginDto.encrypt_pwd}, #{loginDto.custom_id}, 'O', DEFAULT, DEFAULT, DEFAULT, NULL, NULL, NULL, NULL, DEFAULT, #{loginDto.login_id}, NULL, NULL, NULL, NULL);
+	</insert>
+	
+	<select id="searchCustomComp" resultType="com.spring.javagreenS_khv.dto.CustomCompDTO">
+		SELECT 
+			SEQ, --  unique key 
+			CUSTOM_ID, --  primary key
+			CUSTOM_NM, 
+			CUSTOM_NM_SHORT, 
+			CUSTOM_KIND_GROUP_CODE,
+			CUSTOM_KIND_CD, -- foreign key (코드TBL)
+			(SELECT CUSTOM_KIND_NM FROM CUSTOM_KIND WHERE CUSTOM_KIND_CD = THIS.CUSTOM_KIND_CD) AS KIND_NAME, -- foreign key (코드TBL) 
+			CUSTOM_GRADE, -- foreign key (코드TBL)
+			(SELECT GRADE_NAME FROM CUSTOM_GRADE WHERE GRADE_CODE = THIS.CUSTOM_GRADE) AS GRADE_NAME, -- foreign key (코드TBL) 
+			ESTBL_DATE, 
+			COMPANY_NO, 
+			OFFICE, 
+			TEL_NO,
+			HP_NO, 
+			EMAIL, 
+			POST_CODE, 
+			ROAD_ADDR, 
+			EXTRA_ADDR,
+			DETAIL_ADDR, 
+			MEMO,
+			CUSTOM_IMG_FILE_NAME,  
+			CREATE_DATE, 
+			CREATE_USER, 
+			UPDATE_DATE, 
+			UPDATE_USER, 
+			DELETE_DATE, 
+			DELETE_USER 
+		FROM CUSTOM_COMP AS THIS 
+		WHERE CUSTOM_ID = #{customId} 
+		  AND DELETE_DATE IS NULL -- primary key(SEQ) indexing	
+	</select>
+	<update id="updateCustomComp">
+		UPDATE CUSTOM_COMP SET
+			CUSTOM_NM = #{compDto.custom_nm}, 
+			CUSTOM_NM_SHORT = #{compDto.custom_nm_short}, 
+			CUSTOM_KIND_CD = #{compDto.custom_kind_cd}, 
+			ESTBL_DATE = #{compDto.estbl_date}, 
+			COMPANY_NO = #{compDto.company_no}, 
+
+		<if test='compDto.office == "기타" '>
+			OFFICE = #{compDto.txt_office},  
+		</if>
+		
+		<if test='compDto.office != "기타" '>
+			OFFICE = #{compDto.office},  
+		</if>
+			
+			TEL_NO = #{compDto.tel_no}, 
+			HP_NO = #{compDto.hp_no}, 
+			EMAIL = #{compDto.email}, 
+			POST_CODE = #{compDto.post_code}, 
+			ROAD_ADDR = #{compDto.road_addr}, 
+			EXTRA_ADDR = #{compDto.extra_addr}, 
+			DETAIL_ADDR = #{compDto.detail_addr}, 
+			MEMO = #{compDto.memo}, 
+			CUSTOM_IMG_FILE_NAME = #{compDto.custom_img_file_name}, 
+			UPDATE_DATE = DEFAULT, 
+			UPDATE_USER = #{compDto.custom_id} 
+		WHERE CUSTOM_ID = #{compDto.custom_id} 
+		  AND DELETE_DATE IS NULL;
+		  
+		UPDATE CUSTOM_COMP_HISTORY SET 
+		
+			CUSTOM_KIND_CD = #{compDto.custom_kind_cd}, 
+			UPDATE_DATE = DEFAULT, 
+			UPDATE_USER = #{compDto.custom_id} 
+		WHERE CUSTOM_ID = #{compDto.custom_id} 
+		  AND DELETE_DATE IS NULL;
+	</update>
+</mapper>
