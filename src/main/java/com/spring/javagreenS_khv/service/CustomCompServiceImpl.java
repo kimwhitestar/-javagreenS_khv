@@ -134,12 +134,12 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
 	}	
 	
 	@Override
-	public String qrCreate(String qrCodeStartNobodyOrMoveUrls, int customId, String uploadPath, String qrCodeImgName, String extention) {
+	public String qrCreate(String qrCodeStart, String loginId, String uploadPath, String qrCodeImgName, String extention) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmss");
 		UUID uid = UUID.randomUUID();
 		String strUid = uid.toString().substring(0,10);
 		String qrCode = "";
-		qrCode = sdf.format(new Date()) + "_" + String.valueOf(customId) + "_" + qrCodeStartNobodyOrMoveUrls + "_" + strUid;
+		qrCode = sdf.format(new Date()) + "_" + String.valueOf(loginId) + "_" + qrCodeStart + "_" + strUid;
 		String qrCodeFileName = qrCodeImgName + "_" + sdf.format(new Date());
 	  try {
 	      File file = new File(uploadPath);		// qr코드 이미지를 저장할 디렉토리 지정
@@ -181,7 +181,7 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
 	      System.out.println("realPath = " + uploadPath + qrCodeFileName + "." + extention);
 	      ImageIO.write(bufferedImage, extention, new File(uploadPath + qrCodeFileName + "." + extention));		// ImageIO를 사용한 바코드 파일쓰기
 
-	      customCompDao.insertQrCode(customId, qrCode); // 생성한 qr코드 DB저장
+	      customCompDao.insertQrCode(loginId, qrCode); // 생성한 qr코드 DB저장
 	  } catch (Exception e) {
 	      e.printStackTrace();
 	  }

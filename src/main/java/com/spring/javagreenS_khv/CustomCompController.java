@@ -145,7 +145,7 @@ public class CustomCompController {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 
 		String uploadPath = request.getSession().getServletContext().getRealPath("/resources/data/qrCode/");
-		String qrCodeName = customCompService.qrCreate(qrCodeStartNobodyOrMoveUrls, (int) session.getAttribute("sCustomId"), uploadPath, (String) session.getAttribute("sCustomName"), extention);	// qr코드가 저장될 서버경로와 qr코드 찍었을때 이동할 url을 서비스객체로 넘겨서 qr코드를 생성하게 한다.
+		String qrCodeName = customCompService.qrCreate(qrCodeStartNobodyOrMoveUrls, (String) session.getAttribute("sLoginId"), uploadPath, (String) session.getAttribute("sCustomName"), extention);	// qr코드가 저장될 서버경로와 qr코드 찍었을때 이동할 url을 서비스객체로 넘겨서 qr코드를 생성하게 한다.
 		
 		return qrCodeName;
 	}

@@ -17,7 +17,7 @@
 		SELECT * FROM KAKAOADDRESS ORDER BY MAPADDRESS;
 	</select>
 	
-	<insert id="insertQrCode"> INSERT INTO QRCODE VALUES (DEFAULT, #{customId}, #{qrCode}); </insert>
+	<insert id="insertQrCode"> INSERT INTO QRCODE VALUES (DEFAULT, #{loginId}, #{qrCode}); </insert>
 	<select id="searchQrCode" resultType="int"> SELECT CUSTOM_ID FROM QRCODE WHERE QRCODE = #{qrCode}; </select>
 	<select id="searchLogin2" resultType="com.spring.javagreenS_khv.dto.CustomCompLoginDTO">
 

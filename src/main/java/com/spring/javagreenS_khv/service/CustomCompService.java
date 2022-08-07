@@ -49,7 +49,7 @@ public interface CustomCompService {
 	
 	public CustomCompLoginDTO searchLogin(int customId);
 	
-	public String qrCreate(String qrCodeStartNobodyOrMoveUrls, int sCustomId, String uploadPath, String sCustomName, String extention);
+	public String qrCreate(String qrCodeStart, String loginId, String uploadPath, String customName, String extention);
 	
 	
 	public String loginQrCode(String filePath, String qrCodeFileName);

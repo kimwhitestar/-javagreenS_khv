@@ -44,7 +44,7 @@ public interface CustomCompDAO {
 
 	public void updateCustomComp(@Param("compDto") CustomCompDTO compDto);
 
-	public void insertQrCode(@Param("customId") int customId, @Param("qrCode") String qrCode);
+	public void insertQrCode(@Param("loginId") String loginId, @Param("qrCode") String qrCode);
 
 	
 	public String searchQrCode(@Param("qrCode") String qrCode);
