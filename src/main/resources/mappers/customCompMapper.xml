@@ -3,15 +3,14 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.spring.javagreenS_khv.dao.CustomCompDAO">
-<!-- 수정 <mapper namespace="org.mybatis.example.BlogMapper"></mapper> -->
 	<delete id="kakaoEx2Delete">
-		DELETE FROM KAKAOADDRESS WHERE MAPADDRESS = #{address} 
+		DELETE FROM KAKAOADDRESS WHERE MAPADDRESS = #{address} ;
 	</delete>
 	<select id="searchAddressName" resultType="com.spring.javagreenS_khv.vo.KakaoAddressVO">
-		SELECT * FROM KAKAOADDRESS WHERE MAPADDRESS = #{address} 
+		SELECT * FROM KAKAOADDRESS WHERE MAPADDRESS = #{address} ; 
 	</select>
 	<insert id="insertAddressName">
-		INSERT INTO KAKAOADDRESS VALUES (#{vo.customid},#{vo.mapaddress},#{vo.latitude},#{vo.longitude})
+		INSERT INTO KAKAOADDRESS VALUES (#{vo.customid},#{vo.mapaddress},#{vo.latitude},#{vo.longitude}) ;
 	</insert>
 	<select id="searchAddressNameList" resultType="com.spring.javagreenS_khv.vo.KakaoAddressVO">
 		SELECT * FROM KAKAOADDRESS ORDER BY MAPADDRESS;
@@ -70,15 +69,15 @@
 	</select>
 	
 	<update id="updateTodayCnt">
-		UPDATE CUSTOM_COMP_LOGIN SET TODAY_CNT = 0, LOGIN_DATE = DEFAULT, LOGIN_USER = #{loginId}, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+		UPDATE CUSTOM_COMP_LOGIN SET TODAY_CNT = 0, LOGIN_DATE = DEFAULT, LOGIN_USER = #{loginId}, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL ;
 	</update>
 	
 	<update id="updateVisitCntAndTodayCnt">
-		UPDATE CUSTOM_COMP_LOGIN SET VISIT_CNT = VISIT_CNT+1, TODAY_CNT = TODAY_CNT+1, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+		UPDATE CUSTOM_COMP_LOGIN SET VISIT_CNT = VISIT_CNT+1, TODAY_CNT = TODAY_CNT+1, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL ;
 	</update>
 	
 	<update id="updatePoint">
-		UPDATE CUSTOM_COMP_LOGIN SET POINT = POINT + 100, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+		UPDATE CUSTOM_COMP_LOGIN SET POINT = POINT + 100, UPDATE_DATE = DEFAULT, UPDATE_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL ;
 	</update>
 	<update id="updateCustomCompLoginUserDel">
 		UPDATE CUSTOM_COMP_LOGIN SET DELETE_DATE = DEFAULT, DELETE_USER = #{loginId}, LOGOUT_DATE = DEFAULT, LOGOUT_USER = #{loginId}  WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId};
@@ -88,17 +87,17 @@
 		UPDATE CUSTOM_COMP_HISTORY SET DELETE_DATE = DEFAULT, DELETE_USER = #{customId}, DELETE_OVER_FLG = 'PRAC' WHERE CUSTOM_ID = #{customId};
 	</update>
 	<update id="updateLogout">
-		UPDATE CUSTOM_COMP_LOGIN SET LOGOUT_DATE = DEFAULT, LOGOUT_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL
+		UPDATE CUSTOM_COMP_LOGIN SET LOGOUT_DATE = DEFAULT, LOGOUT_USER = #{loginId} WHERE LOGIN_ID = #{loginId} AND CUSTOM_ID = #{customId} AND DELETE_DATE IS NULL ;
 	</update>
 	<select id="loginIdCheck" resultType="boolean">
-		SELECT IF(COUNT(LOGIN_ID) > 0, TRUE, FALSE) AS ISEXIST_ID FROM CUSTOM_COMP_LOGIN WHERE LOGIN_ID = #{loginId}
+		SELECT IF(COUNT(LOGIN_ID) > 0, TRUE, FALSE) AS ISEXIST_ID FROM CUSTOM_COMP_LOGIN WHERE LOGIN_ID = #{loginId} ;
 	</select>
 	<select id="companyNoCheck" resultType="boolean">
-		SELECT IF(COUNT(COMPANY_NO) > 0, TRUE, FALSE) AS ISEXIST_COMPANY_NO FROM CUSTOM_COMP WHERE COMPANY_NO = #{companyNo} -- Unique key(company_no) indexing
+		SELECT IF(COUNT(COMPANY_NO) > 0, TRUE, FALSE) AS ISEXIST_COMPANY_NO FROM CUSTOM_COMP WHERE COMPANY_NO = #{companyNo} ;  -- Unique key(company_no) indexing
 	</select>
 	
 	<select id="emailCheck" resultType="boolean">
-		SELECT IF(COUNT(EMAIL) > 0, TRUE, FALSE) AS ISEXIST_EMAIL FROM CUSTOM_COMP WHERE EMAIL = #{email}
+		SELECT IF(COUNT(EMAIL) > 0, TRUE, FALSE) AS ISEXIST_EMAIL FROM CUSTOM_COMP WHERE EMAIL = #{email} ;
 	</select>
 	
 	
@@ -182,7 +181,7 @@
 			DELETE_USER 
 		FROM CUSTOM_COMP AS THIS 
 		WHERE CUSTOM_ID = #{customId} 
-		  AND DELETE_DATE IS NULL -- primary key(SEQ) indexing	
+		  AND DELETE_DATE IS NULL ;  -- primary key(SEQ) indexing	
 	</select>
 	<update id="updateCustomComp">
 		UPDATE CUSTOM_COMP SET
