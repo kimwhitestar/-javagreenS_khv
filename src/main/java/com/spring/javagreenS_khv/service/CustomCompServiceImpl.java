@@ -217,10 +217,11 @@ System.out.println("Impl.loginQrCode() qrCodeFile : " + filePath + qrCodeFileNam
     try {
       Result result = new MultiFormatReader().decode(bitmap);
       String qrCode = result.getText();
+System.out.println("qrCode = " + qrCode);      
       if (51 > qrCode.length()) return null;
       QrCodeVO qrVo = customCompDao.searchQrCode(qrCode);
       if (null == qrVo) return null;
-      String qrLoginId = qrCode.substring(13, 24).trim();
+      String qrLoginId = qrCode.substring(13, 24 -1).trim();//실제로 index는 0부터 시작되, 13~22까지 자름
 System.out.println("qrLoginId = " + qrLoginId);      
       if (!qrLoginId.equals(qrVo.getLoginId())) return null;
       else return qrVo;

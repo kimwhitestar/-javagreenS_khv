@@ -9,3 +9,6 @@ CREATE TABLE QRCODE (
 drop table QRCODE;
 SELECT * FROM QRCODE ; 
 delete from QRCODE;
+
+SELECT IDX as idx, LOGIN_ID as loginId, CUSTOM_ID as customId, CUSTOM_NM as customName, QRCODE as qrcode FROM QRCODE 
+WHERE QRCODE = '';
