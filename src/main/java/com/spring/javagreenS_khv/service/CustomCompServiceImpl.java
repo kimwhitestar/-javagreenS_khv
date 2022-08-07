@@ -31,6 +31,7 @@ import com.spring.javagreenS_khv.dao.CustomCompDAO;
 import com.spring.javagreenS_khv.dto.CustomCompDTO;
 import com.spring.javagreenS_khv.dto.CustomCompLoginDTO;
 import com.spring.javagreenS_khv.vo.KakaoAddressVO;
+import com.spring.javagreenS_khv.vo.QrCodeVO;
 
 @Service
 public class CustomCompServiceImpl implements CustomCompService {
@@ -129,17 +130,17 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
 
 	
 	@Override
-	public CustomCompLoginDTO searchLogin(int customId) {
-		return customCompDao.searchLogin(customId);
+	public CustomCompLoginDTO searchLogin2(int customId) {
+		return customCompDao.searchLogin2(customId);
 	}	
 	
 	@Override
-	public String qrCreate(String qrCodeStart, String loginId, String uploadPath, String qrCodeImgName, String extention) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmmss");
+	public String qrCreate(String qrCodeStart, String loginId, int customId, String uploadPath, String customName, String extention) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddhhmm");
 		UUID uid = UUID.randomUUID();
-		String strUid = uid.toString().substring(0,10);
-		String qrCode = "";
-		qrCode = sdf.format(new Date()) + "_" + String.valueOf(loginId) + "_" + qrCodeStart + "_" + strUid;
+		String strUid = uid.toString().substring(0,15);
+		String qrCode = "", qrCodeImgName = customName;
+		qrCode = sdf.format(new Date()) + "_" + String.valueOf(loginId) + "_" + qrCodeStart + "_" + strUid; // qrCode Lenth (51) = 12 + 1 + 10 + 1 + 11 + 1 + 15
 		String qrCodeFileName = qrCodeImgName + "_" + sdf.format(new Date());
 	  try {
 	      File file = new File(uploadPath);		// qr코드 이미지를 저장할 디렉토리 지정
@@ -181,7 +182,7 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
 	      System.out.println("realPath = " + uploadPath + qrCodeFileName + "." + extention);
 	      ImageIO.write(bufferedImage, extention, new File(uploadPath + qrCodeFileName + "." + extention));		// ImageIO를 사용한 바코드 파일쓰기
 
-	      customCompDao.insertQrCode(loginId, qrCode); // 생성한 qr코드 DB저장
+	      customCompDao.insertQrCode(loginId, customId, customName, qrCode); // 생성한 qr코드 DB저장
 	  } catch (Exception e) {
 	      e.printStackTrace();
 	  }
@@ -189,7 +190,7 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
 	}	
 
 	@Override
-	public String loginQrCode(String filePath, String qrCodeFileName) {
+	public QrCodeVO loginQrCode(String filePath, String qrCodeFileName) {
     File file = new File(filePath);
     File qrCodeFile = null;
     if (!file.exists()) return null;
@@ -197,10 +198,8 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
     if (null != oldFileNms && 0 < oldFileNms.length) {
       for (String oldFile : oldFileNms) {
       	if (oldFile.equals(qrCodeFileName)) {
-      		UUID uid = UUID.randomUUID();
-      		String tmpUid = uid.toString().substring(0,10);
-      		qrCodeFile = new File(filePath + qrCodeFileName.substring(0, qrCodeFileName.indexOf(".png")) + "_TEMP_UUID_" + tmpUid + ".png"); //QRCodeFileName 덮어쓰기 방지
-      		System.out.println("덮어쓰기 방지용 qr화일명 : " + filePath + qrCodeFileName.substring(0, qrCodeFileName.indexOf(".png")) + "_TEMP_UUID_" + tmpUid + ".png");
+      		qrCodeFile = new File(filePath + qrCodeFileName);
+      		System.out.println("Impl.loginQrCode() qrCodeFile : " + filePath + qrCodeFileName);
       	}
       }
     }
@@ -217,13 +216,13 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
     try {
       Result result = new MultiFormatReader().decode(bitmap);
       String qrCode = result.getText();
-      String qrCustomId = qrCode.substring(15, 8);
-      String customId = String.valueOf(customCompDao.searchQrCode(qrCode)); // 생성한 qr코드 DB저장
-      if (qrCustomId.equals(customId)) {
-      	return customId;
-      } else {
-      	return null;
-      }
+      if (51 > qrCode.length()) return null;
+      QrCodeVO qrVo = customCompDao.searchQrCode(qrCode);
+      if (null == qrVo) return null;
+      String qrLoginId = qrCode.substring(13, 24);
+System.out.println("qrLoginId = " + qrLoginId);      
+      if (!qrLoginId.equals(qrVo.getLoginId())) return null;
+      else return qrVo;
     } catch (NotFoundException e) {
 			System.out.println(e.getMessage());
       return null;

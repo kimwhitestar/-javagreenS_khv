@@ -3,7 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <c:set var="ctxPath" value="${pageContext.request.contextPath}"/>
-<c:set var="qrCodePath" value="D:/JavaGreen/springframework/works/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps/javagreenS_khv/resources/data/qrCode" />
+<c:set var="qrCodePath" value="I:/JavaGreen/springframework/works/.metadata/.plugins/org.eclipse.wst.server.core/tmp0/wtpwebapps/javagreenS_khv/resources/data/qrCode" />
 <!DOCTYPE html>
 <html>
 <head>
@@ -83,7 +83,7 @@
   			type : "post",
   			data : {
   				extention : 'png',
-  				qrCodeStartNobodyOrMoveUrls : 'customCompQrStart' 
+  				qrCodeStartNobodyOrMoveUrls : 'CompQrStart' 
   			},
   			success : function(data) {
 				alert("qr코드 생성완료 : "+data);
@@ -114,7 +114,7 @@
 <body>
 <p><br></p>
 <div class="container">
-  <form name="myForm" method="post">
+  <form name="myForm" method="post" enctype="multipart/form-data">
 	  <h2>QR코드 생성하기</h2>
 	  <hr/>
  	  <div id="qrCreateGroup" class="input-group mb-3 input-group-lg">
@@ -129,9 +129,10 @@
 	  <div id="qrCodeView" style="display:none">
 	    <h3>생성된 QR코드 확인하기</h3>
 	    <div>
-			- 생성된 qr코드명 : <span id="qrView"></span>
+			- 생성된 qr코드명 : <div id="qrView"></div>
 			<br>
-			<span id="qrImage"></span>
+			<div id="qrImage"></div>
+			<div id="rt"><img id="rt_image" class="m-10" style="width:50px;"></div>
 		</div>
 	  </div>
 	<hr/>
@@ -141,7 +142,7 @@
  	  <div id="qrLoginGroup" class="input-group mb-3 input-group-lg">
 			<div class="custom-file">
 				<label class="custom-file-label text-info" id="customImgFileNameLbl" for="customImgFileName">QR코드 사진을 선택해주세요</label>
-				<input type="file" id="customImgFileName" name="customImgFileName" class="custom-file-input border p-0 mt-2" style="width:80%; width:80px"/>
+				<input type="file" id="customImgFileName" name="customImgFileName" accept=".png" class="custom-file-input border p-0 mt-2" style="width:80%; width:80px"/>
 			</div>
    			<input type="button" id="fLogin" value="QR로그인" onclick="loginQrCode()" class="btn btn-primary btn-lg"/>
 	  </div>
@@ -155,12 +156,21 @@
 	$('#qrLoginGroup input[name="customImgFileName"]').on("change", function() {
 		let fileName = $(this).val().split("\\").pop();
 		$(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+		rt_imageChange($(this));
 	});
 	$('#qrCreateGroup input[name="customDir"]').on("change", function() {
 		let fileName = $("#customDir")[0].files[0].webkitRelativePath;//webkitRelativePath로 받은 빈디렉토리에서 자동생성된 화일은 무조건 .ini 확장자를 갖는 화일을 같이 갖고 있다
 		let dirName = fileName;//.substring(0, fileName.indexOf('.'));     //"${fn:substring(fileName, 0, fn:indexOf(fileName, '.'))}";
 		$(this).siblings(".custom-file-label").addClass("selected").html(dirName);//"webkitRelativePath는 디렉토리명이 바껴서 저장이 안됩니다"
 	});
+	//이미지 미리보기
+ 	let rt_imageChange = function(input) {
+		let reader = new FileReader();
+		reader.onload = function (e) {
+			$('#rt_image').attr('src', e.target.result);
+		}
+		reader.readAsDataURL(input[0].files[0]);
+	}
 </script>
   
 </div>

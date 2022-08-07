@@ -5,6 +5,7 @@ import java.util.List;
 import com.spring.javagreenS_khv.dto.CustomCompDTO;
 import com.spring.javagreenS_khv.dto.CustomCompLoginDTO;
 import com.spring.javagreenS_khv.vo.KakaoAddressVO;
+import com.spring.javagreenS_khv.vo.QrCodeVO;
 
 public interface CustomCompService {
 	
@@ -13,7 +14,7 @@ public interface CustomCompService {
 	public void insertAddressName(KakaoAddressVO vo);
 
 	public List<KakaoAddressVO> searchAddressNameList();
-
+	
 	public void kakaoEx2Delete(String address);
 	
 	public CustomCompLoginDTO searchLogin(String loginId, String encryptPwd);
@@ -41,18 +42,13 @@ public interface CustomCompService {
 	public CustomCompDTO searchCustomComp(int customId);
 
 	public void updateCustomComp(CustomCompDTO compDto);
-
 	
 	
+	public CustomCompLoginDTO searchLogin2(int customId);
 	
 	
+	public String qrCreate(String qrCodeStart, String loginId, int customId, String uploadPath, String customName, String extention);
 	
-	public CustomCompLoginDTO searchLogin(int customId);
-	
-	public String qrCreate(String qrCodeStart, String loginId, String uploadPath, String customName, String extention);
-	
-	
-	public String loginQrCode(String filePath, String qrCodeFileName);
-
+	public QrCodeVO loginQrCode(String filePath, String qrCodeFileName);
 
 }

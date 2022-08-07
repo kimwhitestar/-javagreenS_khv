@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import com.spring.javagreenS_khv.dto.CustomCompDTO;
 import com.spring.javagreenS_khv.dto.CustomCompLoginDTO;
 import com.spring.javagreenS_khv.vo.KakaoAddressVO;
+import com.spring.javagreenS_khv.vo.QrCodeVO;
 
 public interface CustomCompDAO {
 	
@@ -42,12 +43,16 @@ public interface CustomCompDAO {
 
 	public CustomCompDTO searchCustomComp(@Param("customId") int customId);
 
+	
 	public void updateCustomComp(@Param("compDto") CustomCompDTO compDto);
 
-	public void insertQrCode(@Param("loginId") String loginId, @Param("qrCode") String qrCode);
+	
+	public void insertQrCode(@Param("loginId") String loginId, @Param("customId") int customId, @Param("customName") String customName, @Param("qrCode") String qrCode);
+	
+	public QrCodeVO searchQrCode(@Param("qrCode") String qrCode);
 
 	
-	public String searchQrCode(@Param("qrCode") String qrCode);
+	public CustomCompLoginDTO searchLogin2(@Param("customId") int customId);
 
-	public CustomCompLoginDTO searchLogin(@Param("customId") int customId);
+
 }

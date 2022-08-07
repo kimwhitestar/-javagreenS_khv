@@ -43,6 +43,7 @@ import com.spring.javagreenS_khv.service.CustomKindService;
 import com.spring.javagreenS_khv.vo.CustomCompEntryUpdateFormVO;
 import com.spring.javagreenS_khv.vo.CustomKindVO;
 import com.spring.javagreenS_khv.vo.KakaoAddressVO;
+import com.spring.javagreenS_khv.vo.QrCodeVO;
 
 //기업고객회원관리Controller
 @Controller
@@ -145,21 +146,28 @@ public class CustomCompController {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 
 		String uploadPath = request.getSession().getServletContext().getRealPath("/resources/data/qrCode/");
-		String qrCodeName = customCompService.qrCreate(qrCodeStartNobodyOrMoveUrls, (String) session.getAttribute("sLoginId"), uploadPath, (String) session.getAttribute("sCustomName"), extention);	// qr코드가 저장될 서버경로와 qr코드 찍었을때 이동할 url을 서비스객체로 넘겨서 qr코드를 생성하게 한다.
+		String qrCodeName = customCompService.qrCreate(qrCodeStartNobodyOrMoveUrls, 
+				(String) session.getAttribute("sLoginId"), (int) session.getAttribute("sCustomId"), 
+				uploadPath, (String) session.getAttribute("sCustomName"), extention);	// qr코드가 저장될 서버경로와 qr코드 찍었을때 이동할 url을 서비스객체로 넘겨서 qr코드를 생성하게 한다.
 		
 		return qrCodeName;
 	}
 
 	@SuppressWarnings("deprecation")
 	@RequestMapping(value="/loginQrCode", method=RequestMethod.POST)
-	public String loginQrCodePost(HttpSession session, HttpServletRequest request, HttpServletResponse response,
-		String customFile) {
+	public String loginQrCodePost(HttpSession session, HttpServletRequest request, HttpServletResponse response, MultipartFile qrFName) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		logger.info("<Request Param> customFile = " + customFile);
-		String filePath = request.getSession().getServletContext().getRealPath("/resources/data/qrCode/");
+		logger.info("<Request Param> qrFName = " + qrFName);
+
 		
-		String customId = customCompService.loginQrCode(filePath, customFile);
-		if (null == customId) return "qrCode/qrCode";
+		
+		String filePath = request.getSession().getServletContext().getRealPath("/resources/data/qrCode/");
+		QrCodeVO qrVo = customCompService.loginQrCode(filePath, qrFName);
+		if (null == qrVo) return "qrCode/qrCode";
+		
+		
+		
+		
 		
 		// --------------------------------------------------
 		// 로그인 성공시 처리 내용 : 로그인정보 세션저장 
@@ -169,9 +177,8 @@ public class CustomCompController {
 		// 3.주요자료 세션 저장 
 		// 4.아이디 저장유무에 따라 쿠키 저장
 		// --------------------------------------------------
-		CustomCompLoginDTO loginDto = customCompService.searchLogin(Integer.parseInt(customId));
+		CustomCompLoginDTO loginDto = customCompService.searchLogin2(qrVo.getCustomId());
 		if (null == loginDto) {
-
 			return "qrCode/qrCode";
 		}
 		
