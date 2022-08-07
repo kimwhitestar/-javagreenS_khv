@@ -156,10 +156,10 @@
 		let fileName = $(this).val().split("\\").pop();
 		$(this).siblings(".custom-file-label").addClass("selected").html(fileName);
 	});
-	$('#qrLoginGroup input[name="customDir"]').on("change", function() {
+	$('#qrCreateGroup input[name="customDir"]').on("change", function() {
 		let fileName = $("#customDir")[0].files[0].webkitRelativePath;//webkitRelativePath로 받은 빈디렉토리에서 자동생성된 화일은 무조건 .ini 확장자를 갖는 화일을 같이 갖고 있다
-		let dirName = fileName.substring(0, fileName.indexOf('.'));     //"${fn:substring(fileName, 0, fn:indexOf(fileName, '.'))}";
-		$(this).siblings(".custom-file-label").addClass("selected").html(dirName + "webkitRelativePath는 디렉토리명이 바껴서 저장이 안됩니다");
+		let dirName = fileName;//.substring(0, fileName.indexOf('.'));     //"${fn:substring(fileName, 0, fn:indexOf(fileName, '.'))}";
+		$(this).siblings(".custom-file-label").addClass("selected").html(dirName);//"webkitRelativePath는 디렉토리명이 바껴서 저장이 안됩니다"
 	});
 </script>
   
