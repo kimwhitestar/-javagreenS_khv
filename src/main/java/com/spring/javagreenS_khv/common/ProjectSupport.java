@@ -28,7 +28,9 @@ public class ProjectSupport {
 			byte[] data = fName.getBytes();
 			HttpServletRequest request = ((ServletRequestAttributes)RequestContextHolder.currentRequestAttributes()).getRequest();
 			String uploadPath = "";
-			if(flag.equals("custom")) {
+			if (flag.equals("custom")) {
+			  uploadPath = request.getSession().getServletContext().getRealPath("/resources/data/"+flag+"/");
+			} else if (flag.equals("qrCode")) {
 			  uploadPath = request.getSession().getServletContext().getRealPath("/resources/data/"+flag+"/");
 			}
 			FileOutputStream fos = new FileOutputStream(uploadPath + saveFileName);

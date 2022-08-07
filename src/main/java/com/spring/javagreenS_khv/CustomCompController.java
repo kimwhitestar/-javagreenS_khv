@@ -10,13 +10,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
-
 import javax.servlet.http.Cookie;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
 import org.slf4j.Logger;
+
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -31,19 +31,21 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.spring.javagreenS_khv.common.ProjectSupport;
 import com.spring.javagreenS_khv.dto.CustomCompDTO;
+
 import com.spring.javagreenS_khv.dto.CustomCompLoginDTO;
 import com.spring.javagreenS_khv.dto.CustomGradeDTO;
 import com.spring.javagreenS_khv.dto.CustomKindDTO;
 import com.spring.javagreenS_khv.service.CustomCompService;
 import com.spring.javagreenS_khv.service.CustomGradeService;
 import com.spring.javagreenS_khv.service.CustomKindService;
+
 import com.spring.javagreenS_khv.vo.CustomCompEntryUpdateFormVO;
 import com.spring.javagreenS_khv.vo.CustomKindVO;
 import com.spring.javagreenS_khv.vo.KakaoAddressVO;
 import com.spring.javagreenS_khv.vo.QrCodeVO;
+
 
 //기업고객회원관리Controller
 @Controller
@@ -52,6 +54,7 @@ public class CustomCompController {
 	
 	private static final Logger logger = LoggerFactory.getLogger(CustomCompController.class);
 	
+
 	@Autowired
 	public CustomCompService customCompService;
 	
@@ -63,6 +66,7 @@ public class CustomCompController {
 	
 //	@Autowired
 //	public CustomCompEntryUpdateFormVO customCompVo;
+	
 	
 	
 	//카카오맵 사용
@@ -79,7 +83,6 @@ public class CustomCompController {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		return "custom/comp/kakaomap/kakaoEx1";
 	}
-	
 	
 	//카카오맵 응용1 - 주소명으로 저장
 	@ResponseBody
@@ -112,7 +115,6 @@ public class CustomCompController {
 //		customCompService.kakaoEx2Delete(mapaddress);
 //		return "";
 //	}
-	
 //	// 카카오맵 응용하기3
 //	@RequestMapping(value="/kakaoEx3", method=RequestMethod.GET)
 //	public String kakaoEx3Get(Model model, String mapaddress) {
@@ -120,7 +122,7 @@ public class CustomCompController {
 //		model.addAttribute("mapaddress", mapaddress);
 //		return "custom/comp/kakaomap/kakaoEx3";
 //	}
-	
+
 	//고객회사소개 (Map)
 	@RequestMapping(value="/customCompMap", method=RequestMethod.GET)
 	public String customCompMapGet(HttpSession session, String address, Model model) {
@@ -128,113 +130,9 @@ public class CustomCompController {
 		String sAddress = (String)session.getAttribute("sAddress");
 		if(address == null) address = sAddress;
 		model.addAttribute("address", address);
-		
 		return "custom/comp/kakaomap/customCompMap";
 	}
-	// QR코드 생성화면 이동(URL 등록폼)
-	@RequestMapping(value="/qrCode", method=RequestMethod.GET)
-	public String qrCodeGet() {
-		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		return "qrCode/qrCode";
-	}
-	
-	// QR코드 생성 -- 화일명에 한글지원하는 produces의 출처: https://tomining.tistory.com/202 [마이너의 일상:티스토리]
-	@SuppressWarnings("deprecation")
-	@ResponseBody
-	@RequestMapping(value="/qrCreate", method=RequestMethod.POST, produces="application/text;charset=utf8")
-	public String qrCreatePost(HttpServletRequest request, HttpSession session, String qrCodeStartNobodyOrMoveUrls, String extention) {
-		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-
-		String uploadPath = request.getSession().getServletContext().getRealPath("/resources/data/qrCode/");
-		String qrCodeName = customCompService.qrCreate(qrCodeStartNobodyOrMoveUrls, 
-				(String) session.getAttribute("sLoginId"), (int) session.getAttribute("sCustomId"), 
-				uploadPath, (String) session.getAttribute("sCustomName"), extention);	// qr코드가 저장될 서버경로와 qr코드 찍었을때 이동할 url을 서비스객체로 넘겨서 qr코드를 생성하게 한다.
-		
-		return qrCodeName;
-	}
-
-	@SuppressWarnings("deprecation")
-	@RequestMapping(value="/loginQrCode", method=RequestMethod.POST)
-	public String loginQrCodePost(HttpSession session, HttpServletRequest request, HttpServletResponse response, MultipartFile qrFName) {
-		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		logger.info("<Request Param> qrFName = " + qrFName);
-
-		
-		
-		String filePath = request.getSession().getServletContext().getRealPath("/resources/data/qrCode/");
-		QrCodeVO qrVo = customCompService.loginQrCode(filePath, qrFName);
-		if (null == qrVo) return "qrCode/qrCode";
-		
-		
-		
-		
-		
-		// --------------------------------------------------
-		// 로그인 성공시 처리 내용 : 로그인정보 세션저장 
-		// --------------------------------------------------
-		// 1.오늘방문횟수, 전체방문횟수 1씩 증가 
-		// 2.포인터 증가(1일 10회까지 방문시마다 100포인트씩 증가)
-		// 3.주요자료 세션 저장 
-		// 4.아이디 저장유무에 따라 쿠키 저장
-		// --------------------------------------------------
-		CustomCompLoginDTO loginDto = customCompService.searchLogin2(qrVo.getCustomId());
-		if (null == loginDto) {
-			return "qrCode/qrCode";
-		}
-		
-		//로그인정보 세션저장
-		setLoginSession(request, response, session, loginDto, "");
-		
-		return "redirect:/msgCustomComp/LoginOk";
-	}
-	//로그인화면 이동
-	@RequestMapping(value="/customCompLogin", method=RequestMethod.GET)
-	public String customCompLoginGet(HttpServletRequest request) {
-		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		Cookie[] cookies = request.getCookies();
-		if (null != cookies) {
-			String cLoginId = "";
-			for (int i=0; i<cookies.length; i++) {
-				if (cookies[i].getName().equals("cLoginId")) {
-					cLoginId = cookies[i].getValue();
-					request.setAttribute("loginId", cLoginId);
-					break;
-				}
-			}
-		}
-		return "custom/comp/customCompLogin";
-	}
-	
-	//로그인
-	@RequestMapping(value="/customCompLogin", method=RequestMethod.POST)
-	public String customCompLoginPost(HttpSession session, HttpServletRequest request, HttpServletResponse response,
-		@RequestParam("loginId") String loginId,
-		@RequestParam("encryptPwd") String encryptPwd,
-		@RequestParam(name="idSave", defaultValue="", required=false) String idSave,
-		Model model) {//Model쓸때는 RedirectAttribute를 같이 쓸 수 없다
-		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		// --------------------------------------------------
-		// 로그인 성공시 처리 내용 : 로그인정보 세션저장 
-		// --------------------------------------------------
-		// 1.오늘방문횟수, 전체방문횟수 1씩 증가 
-		// 2.포인터 증가(1일 10회까지 방문시마다 100포인트씩 증가)
-		// 3.주요자료 세션 저장 
-		// 4.아이디 저장유무에 따라 쿠키 저장
-		// --------------------------------------------------
-		CustomCompLoginDTO loginDto = customCompService.searchLogin(loginId, encryptPwd);
-		if (null == loginDto) {
-			return "custom/comp/customCompLogin";
-		}
-		
-		//로그인정보 세션저장
-		setLoginSession(request, response, session, loginDto, idSave);
-		
-		return "redirect:/msgCustomComp/LoginOk";
-	}
-	
-	private void setLoginSession(HttpServletRequest request, HttpServletResponse response, HttpSession session, 
-		CustomCompLoginDTO loginDto, String idSave) {
-		
+	private void setLoginSession(HttpServletRequest request, HttpServletResponse response, HttpSession session, CustomCompLoginDTO loginDto, String idSave) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		//로그인 아이디,비밀번호로 회원조회가 됬을 경우, HttpSession에 조회된 회원정보 설정
 		session.setAttribute("sLoginId", loginDto.getLogin_id());
@@ -242,13 +140,17 @@ public class CustomCompController {
 		session.setAttribute("sGradeName", loginDto.getGrade_name());//고객등급명
 		session.setAttribute("sCustomId", loginDto.getCustom_id());//고객ID -- SEQ로 바꾸자
 		session.setAttribute("sCustomName", loginDto.getCustom_name());//고객명
+
 		session.setAttribute("sAddress", loginDto.getAddress());//고객회사소개-kakaoMap검색용(도로명주소)
 		session.setAttribute("sLoginDate", loginDto.getLogin_date());//로그인날짜
+
+		
+		
+		
 		// --------------------------------------------------
 		// DB 저장 : 오늘방문횟수, 전체방문횟수, 포인터 100씩 증가
 		// --------------------------------------------------
 		//최종방문일과 오늘날짜 비교해서 다른 경우, 오늘방문횟수(todayCnt)값을 0으로 초기화
-    
 		String todayYmdhms = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").format(new Date());
     String todayYmd = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
 		
@@ -257,6 +159,7 @@ public class CustomCompController {
 			loginDto.setToday_cnt(0);
 			loginDto.setLogin_date(todayYmdhms);
 		}
+    
 		//1.오늘방문횟수, 전체방문횟수 1씩 증가 
 		customCompService.updateVisitCntAndTodayCnt(loginDto.getLogin_id(), loginDto.getCustom_id());//DB 방문횟수 증가
 		loginDto.setToday_cnt(loginDto.getToday_cnt() + 1);
@@ -272,11 +175,10 @@ public class CustomCompController {
 		session.setAttribute("sTodayVCnt", loginDto.getToday_cnt());
 		session.setAttribute("sVCnt", loginDto.getVisit_cnt());
 		session.setAttribute("sPoint", loginDto.getPoint());
-		
 		//idSave 저장 : 쿠키에 아이디(id)를 저장 checkbox checked 클릭 여부 - on/null
+
 		if (idSave.equals("on")) {
 			Cookie cookie = new Cookie("cLoginId", loginDto.getLogin_id());
-			
 			cookie.setMaxAge(60*60*24*7); //쿠키저장기간 : 7일(단위:초)
 			response.addCookie(cookie);
 		} else {
@@ -291,25 +193,171 @@ public class CustomCompController {
 		}
 	}
 	
-	//회원전용방
-	@RequestMapping(value="/customCompMain", method=RequestMethod.GET)
-	public String customCompMainGet(HttpSession session, Model model) {
+	
+	
+	private String getOrgFileName(MultipartFile fName) {
+
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		String sLoginId = (String)session.getAttribute("sLoginId");
-		String sGradeCode = (String) session.getAttribute("sGradeCode");
+		String orgFileName = "";
+		String oFileName = fName.getOriginalFilename();
 		
-		if ((null == sLoginId || 0 == sLoginId.trim().length()) 
-			&& (null == sGradeCode || 0 == sGradeCode.trim().length())) {
-			//비회원 화면
-			return "redirect:/msgCustomComp/LoginNo";
+		if(!oFileName.equals("")) {
+			UUID uid = UUID.randomUUID();
+			orgFileName = uid + "_" + oFileName;
 		}
+		return orgFileName;
+	}
+	// QR코드 생성화면 이동(URL 등록폼)
+	@RequestMapping(value="/qrCode", method=RequestMethod.GET)
+	public String qrCodeGet() {
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
+
 		
-		int sCustomId = (int) session.getAttribute("sCustomId");
-		CustomCompDTO compDTO = customCompService.searchCustomComp(sCustomId);
-		model.addAttribute("photo", compDTO.getCustom_img_file_name());//프로필 사진
-		return "custom/comp/customCompMain";
+		return "qrCode/qrCode";
+	}
+	// QR코드 생성 -- 화일명에 한글지원하는 produces의 출처: https://tomining.tistory.com/202 [마이너의 일상:티스토리]
+	@SuppressWarnings("deprecation")
+	@ResponseBody
+	@RequestMapping(value="/qrCreate", method=RequestMethod.POST, produces="application/text;charset=utf8")
+	public String qrCreatePost(HttpServletRequest request, HttpSession session, String qrCodeStartNobodyOrMoveUrls, String extention) {
+
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
+		String uploadPath = request.getSession().getServletContext().getRealPath("/resources/data/qrCode/");
+		String qrCodeName = customCompService.qrCreate(qrCodeStartNobodyOrMoveUrls, (String) session.getAttribute("sLoginId"), (int) session.getAttribute("sCustomId"), 
+				uploadPath, (String) session.getAttribute("sCustomName"), extention);	// qr코드가 저장될 서버경로와 qr코드 찍었을때 이동할 url을 서비스객체로 넘겨서 qr코드를 생성하게 한다.
+		return qrCodeName;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	@SuppressWarnings("deprecation")
+	@RequestMapping(value="/loginQrCode", method=RequestMethod.POST)
+	public String loginQrCodePost(HttpSession session, HttpServletRequest request, HttpServletResponse response, MultipartFile qrFName) {
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
+		logger.info("<Request Param> qrFName = " + qrFName);
+		//고객사진 upload보관
+		String orgFileName = this.getOrgFileName(qrFName);
+		ProjectSupport ps = new ProjectSupport();
+		ps.writeFile(qrFName, orgFileName, "qrCode");
+
+		QrCodeVO qrVo = customCompService.loginQrCode(
+				request.getSession().getServletContext().getRealPath("/resources/data/qrCode/"), 
+				qrFName.getOriginalFilename());
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		if (null == qrVo) return "qrCode/qrCode";
+		// --------------------------------------------------
+		// 로그인 성공시 처리 내용 : 로그인정보 세션저장 
+		// --------------------------------------------------
+		// 1.오늘방문횟수, 전체방문횟수 1씩 증가 
+		// 2.포인터 증가(1일 10회까지 방문시마다 100포인트씩 증가)
+
+		// 3.주요자료 세션 저장 
+		// 4.아이디 저장유무에 따라 쿠키 저장
+		// --------------------------------------------------
+		
+		
+		
+
+		
+		
+		
+		
+		
+		
+		CustomCompLoginDTO loginDto = customCompService.searchLogin2(qrVo.getCustomId());
+		if (null == loginDto) return "qrCode/qrCode";
+		setLoginSession(request, response, session, loginDto, "");//로그인정보 세션저장
+		return "redirect:/msgCustomComp/LoginOk";
 	}
 
+	//로그인화면 이동
+	@RequestMapping(value="/customCompLogin", method=RequestMethod.GET)
+	public String customCompLoginGet(HttpServletRequest request) {
+
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
+		Cookie[] cookies = request.getCookies();
+		if (null != cookies) {
+
+			
+			
+			
+			
+			String cLoginId = "";
+			
+			for (int i=0; i<cookies.length; i++) {
+				if (cookies[i].getName().equals("cLoginId")) {
+					cLoginId = cookies[i].getValue();
+			
+					request.setAttribute("loginId", cLoginId);
+					break;
+				}
+			}
+		}
+		
+		return "custom/comp/customCompLogin";
+	}
+	//로그인
+	@RequestMapping(value="/customCompLogin", method=RequestMethod.POST)
+	public String customCompLoginPost(HttpSession session, HttpServletRequest request, HttpServletResponse response,
+		@RequestParam("loginId") String loginId, @RequestParam("encryptPwd") String encryptPwd,
+		@RequestParam(name="idSave", defaultValue="", required=false) String idSave, Model model) {//Model쓸때는 RedirectAttribute를 같이 쓸 수 없다
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
+		// --------------------------------------------------
+
+		// 로그인 성공시 처리 내용 : 로그인정보 세션저장 
+		// --------------------------------------------------
+		// 1.오늘방문횟수, 전체방문횟수 1씩 증가 
+		
+		// 2.포인터 증가(1일 10회까지 방문시마다 100포인트씩 증가)
+		// 3.주요자료 세션 저장 
+
+		// 4.아이디 저장유무에 따라 쿠키 저장
+		
+		
+		// --------------------------------------------------
+		CustomCompLoginDTO loginDto = customCompService.searchLogin(loginId, encryptPwd);
+		if (null == loginDto) return "custom/comp/customCompLogin";
+		setLoginSession(request, response, session, loginDto, idSave);//로그인정보 세션저장
+
+		
+		
+		
+		return "redirect:/msgCustomComp/LoginOk";
+
+	}
 	//회원탈퇴(기업고객로그인테이블) - 30일 회원정보유지, 회원로그인정보 임시삭제(delete_date=탈퇴날짜(회원탈퇴))
 	@RequestMapping(value="/customCompDeletePract", method=RequestMethod.GET)
 	public String customCompDeletePractGet(HttpServletRequest request) {
@@ -320,11 +368,13 @@ public class CustomCompController {
 		//회원탈퇴 - 1달간은 회원정보유지, deleteDate와 logoutDate를 now()로 수정
 		customCompService.updateCustomCompLoginUserDel(sLoginId, sCustomId);
 //		if (1 == res) {
-			return "redirect:/msgCustomComp/DeletePractOk";
+
+		return "redirect:/msgCustomComp/DeletePractOk";
 //		} else {
 //			return "redirect:/msgCustomComp/DeletePractNo";
 //		}
 	}
+
 	//로그아웃
 	@RequestMapping(value="/customCompLogout", method=RequestMethod.GET)
 	public String customCompLogoutGet(HttpServletRequest request, Model model) {
@@ -333,7 +383,6 @@ public class CustomCompController {
 		String sLoginId = (String) session.getAttribute("sLoginId");
 		int sCustomId = (int) session.getAttribute("sCustomId");
 		String sCustomName = (String) session.getAttribute("sCustomName");
-		
 		customCompService.updateLogout(sLoginId, sCustomId);//DB 로그아웃정보 수정
 //		if (1 == res) {
 			session.invalidate();//세션삭제
@@ -347,20 +396,15 @@ public class CustomCompController {
 	//ckeditor에서 글을 올릴 때 image와 함께 올리려면, 이곳에서 서버파일시스템에 그림파일을 저장할 수 있도록 처리
 	@ResponseBody
 	@RequestMapping(value="/imageUpload", method=RequestMethod.GET)
-	public void imageUploadGet(HttpServletRequest request, HttpServletResponse response, MultipartFile upload) 
-		throws Exception {
+	public void imageUploadGet(HttpServletRequest request, HttpServletResponse response, MultipartFile upload) throws Exception {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-
 		response.setCharacterEncoding("utf-8");
 		response.setContentType("text/html; charset=utf-8");
-		
-		
+
 		String orgFName = upload.getOriginalFilename();
 		Date date = new Date();
 		SimpleDateFormat sdf = new SimpleDateFormat("yyMMddhhmmss");
 		orgFName = sdf.format(date) + "_" + orgFName;
-		
-		
 		//서버파일시스템에 사진 저장(전송하지 않아도, 호일읽는 것만으로 아래폴더에 사진이 저장되고, 사진을 뺀다고 지워지지않는다.
 		byte[] bytes = upload.getBytes();
 		String uploadPath = request.getSession().getServletContext().getRealPath("/resources/data/ckeditor/");
@@ -370,28 +414,114 @@ public class CustomCompController {
 		//서버파일시스템에 저장된 파일을 화면에 보여주기위한 작업
 		PrintWriter out = response.getWriter();
 		String fileUrl = request.getContextPath() + "/data/ckeditor/" + orgFName;
-
 		// Json type으로 출력(전송) { key : value, key : value } 
 		out.println("{\"orgFName\":\""+orgFName+"\",\"uploaded\":1, \"url\":\""+fileUrl+"\"}");
+
 		out.flush();
 		os.close();
 	}
 
-	private String getOrgFileName(MultipartFile fName) {
-		String orgFileName = "";
-		String oFileName = fName.getOriginalFilename();
-		if(!oFileName.equals("")) {
-			UUID uid = UUID.randomUUID();
-			orgFileName = uid + "_" + oFileName;
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	//회원전용방
+
+	@RequestMapping(value="/customCompMain", method=RequestMethod.GET)
+	public String customCompMainGet(HttpSession session, Model model) {
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
+		String sLoginId = (String)session.getAttribute("sLoginId");
+		String sGradeCode = (String) session.getAttribute("sGradeCode");
+		if ((null == sLoginId || 0 == sLoginId.trim().length()) 
+			&& (null == sGradeCode || 0 == sGradeCode.trim().length())) {
+			//비회원 화면
+			return "redirect:/msgCustomComp/LoginNo";
 		}
-		return orgFileName;
+		int sCustomId = (int) session.getAttribute("sCustomId");
+		CustomCompDTO compDTO = customCompService.searchCustomComp(sCustomId);
+		model.addAttribute("photo", compDTO.getCustom_img_file_name());//프로필 사진
+	
+		
+		return "custom/comp/customCompMain";
 	}
 
+	
+	
 	//회원가입화면 이동
 	@RequestMapping(value="/customCompEntry", method=RequestMethod.GET)
 	public String customCompEntryGet(Model model) {
-		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		//기업고객고분코드 목록조회 
 		List<CustomKindDTO> customKindDtoList = customKindService.searchCustomKindList();
 		List<CustomKindVO> customKindVoList = new ArrayList<>();
@@ -405,13 +535,11 @@ public class CustomCompController {
 		model.addAttribute("customKindList", customKindVoList);
 		return "custom/comp/customCompEntry";
 	}
-
 	//회원가입
+
 	@RequestMapping(value="/customCompEntry", method=RequestMethod.POST)
-	public String customCompEntryPost(HttpServletRequest request, @Validated CustomCompEntryUpdateFormVO customCompVo, BindingResult bindRes, 
-			MultipartFile fName, Model model) {
-			logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-	
+	public String customCompEntryPost(HttpServletRequest request, @Validated CustomCompEntryUpdateFormVO customCompVo, BindingResult bindRes, MultipartFile fName, Model model) {
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 System.out.println("customCompVo.getPostcode() = " + customCompVo.getPostcode());			
 System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getValidatingPostcode());			
 //		if (bindRes.hasErrors()) {
@@ -761,14 +889,12 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		return "custom/comp/customCompLoginIdCheck";
 	}
-	
 	//로그인ID중복체크
 	@RequestMapping(value="/customCompLoginIdCheck", method=RequestMethod.POST)
 	public String customCompLoginIdCheckPost(
 		@RequestParam(name="loginId", defaultValue="", required=true) String loginId,
 		Model model) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		
 		model.addAttribute("loginId", loginId);
 		//isExist = true 아이디 중복
 		if (customCompService.loginIdCheck(loginId)) {
@@ -778,6 +904,8 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		}
 		return "custom/comp/customCompLoginIdCheck";
 	}
+
+	
 	
 	//사업자등록번호중복체크화면 이동
 	@RequestMapping(value="/customCompCompanyNoCheck", method=RequestMethod.GET)
@@ -785,42 +913,30 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		return "custom/comp/customCompCompanyNoCheck";
 	}
-	
-	
-	
-	
-	
-	
 	//사업자등록번호중복체크
 	@RequestMapping(value="/customCompCompanyNoCheck", method=RequestMethod.POST)
-	public String customCompCompanyNoCheckPost(
-		@RequestParam(name="companyNo", defaultValue="", required=true) String companyNo,
-		Model model) {
+	public String customCompCompanyNoCheckPost(@RequestParam(name="companyNo", defaultValue="", required=true) String companyNo, Model model) {
+
+		
+		
+		
+		
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		model.addAttribute("companyNo", companyNo);
-		
 		//isExist = true 아이디 중복
 		if (customCompService.companyNoCheck(companyNo)) {
 			model.addAttribute("existCompanyNoYN", "Y");
-		
 		} else {
 			model.addAttribute("existCompanyNoYN", "N");
 		}
-		
 		return "custom/comp/customCompCompanyNoCheck";
 	}
-	
-	
 	//이메일중복체크화면 이동
 	@RequestMapping(value="/customCompEmailCheck", method=RequestMethod.GET)
 	public String customCompEmailCheckGet() {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		return "custom/comp/customCompEmailCheck";
 	}
-	
-	
-	
-	
 	
 	
 	
@@ -845,27 +961,42 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		model.addAttribute("email1", email1);
 		model.addAttribute("email2", email2);
 		model.addAttribute("txtEmail2", txtEmail2);
+
 		//이메일 중복 / 존재 체크
 		if (customCompService.emailCheck(email)) {
 			model.addAttribute("existEmailYN", "Y");
 		} else {
 			model.addAttribute("existEmailYN", "N");
 		}
+		
+		
+		
 		return "custom/comp/customCompEmailCheck";
 	}
 	
+	
 	//회원정보수정화면 이동
+	
 	@RequestMapping(value="/customCompUpdate", method=RequestMethod.GET)
 	public String customCompUpdateGet(HttpServletRequest request, Model model) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-
 		HttpSession session = request.getSession();
+
 		int sCustomId = (int) session.getAttribute("sCustomId");
 
 		//개별회원정보 조회
 		CustomCompDTO compDto = customCompService.searchCustomComp(sCustomId);
 		if (null == compDto) return "redirect:/msgCustomComp/LoginNo";//비회원화면으로 이동
 			
+
+		
+		
+		
+		
+		
+		
+		
+		
 		//Form출력 설정
 		CustomCompEntryUpdateFormVO customCompVo = new CustomCompEntryUpdateFormVO();
 		customCompVo.setCustomName(compDto.getCustom_nm());
@@ -877,9 +1008,6 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		customCompVo.setExtraAddress(compDto.getExtra_addr());
 		customCompVo.setDetailAddress(compDto.getDetail_addr());
 		customCompVo.setMemo(compDto.getMemo());
-		
-		
-		
 		
 		//Form출력 편집 설정
 		//창립일
@@ -894,7 +1022,6 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		} else {
 			customCompVo.setOffice(compDto.getOffice());
 		}
-		
 		
 		//Email 분리(@)
 		String[] email = compDto.getEmail().split("@");
@@ -928,6 +1055,8 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 			customCompVo.setHp2(hp[1]);
 			customCompVo.setHp3(hp[2]);
 		}
+
+		
 		//customImgFileName
 		customCompVo.setCustomImgFileName(compDto.getCustom_img_file_name());
 
@@ -938,19 +1067,35 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		List<CustomKindDTO> customKindDtoList = customKindService.searchCustomKindList();
 		List<CustomKindVO> customKindVoList = new ArrayList<>();
 		CustomKindVO customKindVo = null;
+		
+		
 		for (CustomKindDTO customKindDto : customKindDtoList) {
 			customKindVo = new CustomKindVO();
-			
 			customKindVo.setCustomKindCode(customKindDto.getCustom_kind_cd());
 			customKindVo.setCustomKindName(customKindDto.getCustom_kind_nm());
 			customKindVoList.add(customKindVo);
 		}
+
 		
 		//기업고객고분코드 화면표시값 설정 
 		model.addAttribute("customKindList", customKindVoList);
-		
 		return "custom/comp/customCompUpdate";
 	}
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	//회원정보수정
 	@RequestMapping(value="/customCompUpdate", method=RequestMethod.POST)
@@ -974,13 +1119,16 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 				File file = new File(uploadPath + customCompVo.getPhoto());
 				file.delete();
 			}
+
+			
 			// 기존파일을 지우고, 새로 업로드된 파일명을 set시킨다.
 			customCompVo.setPhoto(orgFileName);
 		} 
 		
+		
+		
 		String sLoginId = (String) session.getAttribute("sLoginId");
 		String encryptPwd = customCompVo.getEncryptPwd();
-		
 		CustomCompLoginDTO loginDto = customCompService.searchLogin(sLoginId, encryptPwd);
 		if (null == loginDto) return "redirect:/msgCustomComp/PwdNo";//회원정보수정화면으로 재이동-비밀번호 오류
 		CustomCompDTO compDto = new CustomCompDTO();//기업고객 회원정보 VO
@@ -992,11 +1140,13 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 		compDto.setCompany_no(customCompVo.getCompanyNo());
 		compDto.setOffice(customCompVo.getOffice());
 		compDto.setTxt_office(customCompVo.getTxtOffice());
+
 		compDto.setTel_no(customCompVo.getTelNo());
 		compDto.setHp_no(customCompVo.getHpNo());
 		compDto.setEmail(customCompVo.getEmail());
 		compDto.setPost_code(customCompVo.getValidatingPostcode());
 		compDto.setRoad_addr(customCompVo.getRoadAddress());
+		
 		compDto.setExtra_addr(customCompVo.getExtraAddress());
 		compDto.setDetail_addr(customCompVo.getDetailAddress());
 		compDto.setMemo(customCompVo.getMemo());
@@ -1004,7 +1154,9 @@ System.out.println("customCompVo.getValidatingPostcode() = " + customCompVo.getV
 
 		customCompService.updateCustomComp(compDto);//기업고객 회원정보 DB 수정
 //		if (1 == resComp) {
+		
 			model.addAttribute("sCustomName", customCompVo.getCustomName());//고객명
+			
 			return "redirect:/msgCustomComp/UpdateOk";
 //		} else {
 //			return "redirect:/msgCustomComp/UpdateNo";

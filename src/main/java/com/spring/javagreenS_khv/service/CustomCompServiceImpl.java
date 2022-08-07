@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.SimpleFormatter;
 
 import javax.imageio.ImageIO;
 
@@ -140,7 +141,7 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
 		UUID uid = UUID.randomUUID();
 		String strUid = uid.toString().substring(0,15);
 		String qrCode = "", qrCodeImgName = customName;
-		qrCode = sdf.format(new Date()) + "_" + String.valueOf(loginId) + "_" + qrCodeStart + "_" + strUid; // qrCode Lenth (51) = 12 + 1 + 10 + 1 + 11 + 1 + 15
+		qrCode = sdf.format(new Date()) + "_" + String.format("%10s", loginId) + "_" + qrCodeStart + "_" + strUid; // qrCode Lenth (51) = 12 + 1 + 10 + 1 + 11 + 1 + 15
 		String qrCodeFileName = qrCodeImgName + "_" + sdf.format(new Date());
 	  try {
 	      File file = new File(uploadPath);		// qr코드 이미지를 저장할 디렉토리 지정
@@ -199,7 +200,7 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
       for (String oldFile : oldFileNms) {
       	if (oldFile.equals(qrCodeFileName)) {
       		qrCodeFile = new File(filePath + qrCodeFileName);
-      		System.out.println("Impl.loginQrCode() qrCodeFile : " + filePath + qrCodeFileName);
+System.out.println("Impl.loginQrCode() qrCodeFile : " + filePath + qrCodeFileName);
       	}
       }
     }
@@ -219,7 +220,7 @@ System.out.println("<Impl> compDto.getCustom_img_file_name() = " + compDto.getCu
       if (51 > qrCode.length()) return null;
       QrCodeVO qrVo = customCompDao.searchQrCode(qrCode);
       if (null == qrVo) return null;
-      String qrLoginId = qrCode.substring(13, 24);
+      String qrLoginId = qrCode.substring(13, 24).trim();
 System.out.println("qrLoginId = " + qrLoginId);      
       if (!qrLoginId.equals(qrVo.getLoginId())) return null;
       else return qrVo;
