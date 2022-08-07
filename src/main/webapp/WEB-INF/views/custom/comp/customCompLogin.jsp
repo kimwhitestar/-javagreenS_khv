@@ -94,6 +94,7 @@
 					</div>
 					<div class="form-group text-center">
 						<button id="btnLogin" type="button" class="btn btn-info btn-sm" onclick="formCheck()">로그인</button> &nbsp;
+						<a id="btnQrLogin" class="btn btn-info btn-sm" target="customContent" href="${ctxPath}/customComp/qrCode">로그인[QR]</a> &nbsp;
 						<button type="reset" class="btn btn-info btn-sm">다시작성</button> &nbsp;
 						<button type="button" class="btn btn-info btn-sm" onclick="location.href='${ctxPath}/';">돌아가기</button> &nbsp;
 						<button type="button" class="btn btn-info btn-sm" onclick="location.href='${ctxPath}/customComp/customCompEntry';">회원가입</button>
