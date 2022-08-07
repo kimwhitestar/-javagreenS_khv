@@ -249,17 +249,17 @@ public class CustomCompController {
 	
 	@SuppressWarnings("deprecation")
 	@RequestMapping(value="/loginQrCode", method=RequestMethod.POST)
-	public String loginQrCodePost(HttpSession session, HttpServletRequest request, HttpServletResponse response, MultipartFile qrFName) {
+	public String loginQrCodePost(HttpSession session, HttpServletRequest request, HttpServletResponse response, MultipartFile customImgFileName) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		logger.info("<Request Param> qrFName = " + qrFName);
+		logger.info("<Request Param> qrFName = " + customImgFileName);
 		//고객사진 upload보관
-		String orgFileName = this.getOrgFileName(qrFName);
+		String orgFileName = this.getOrgFileName(customImgFileName);
 		ProjectSupport ps = new ProjectSupport();
-		ps.writeFile(qrFName, orgFileName, "qrCode");
+		ps.writeFile(customImgFileName, orgFileName, "qrCode");
 
 		QrCodeVO qrVo = customCompService.loginQrCode(
 				request.getSession().getServletContext().getRealPath("/resources/data/qrCode/"), 
-				qrFName.getOriginalFilename());
+				customImgFileName.getOriginalFilename());
 		
 		
 		

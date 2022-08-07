@@ -132,7 +132,7 @@
 			- 생성된 qr코드명 : <div id="qrView"></div>
 			<br>
 			<div id="qrImage"></div>
-			<div id="rt"><img id="rt_image" class="m-10" style="width:50px;"></div>
+			<div id="rt"><img id="rt_image" class="m-10" style="width:100px" /></div>
 		</div>
 	  </div>
 	<hr/>
@@ -147,11 +147,17 @@
    			<input type="button" id="fLogin" value="QR로그인" onclick="loginQrCode()" class="btn btn-primary btn-lg"/>
 	  </div>
   </form>
-  
-  
-  
 <script>
 	'use strict';
+	//이미지 미리보기
+ 	let rt_imageChange = function(input) {
+		let reader = new FileReader();
+		reader.onload = function (e) {
+			$('#rt_image').attr('src', e.target.result);
+		}
+		reader.readAsDataURL(input[0].files[0]);
+		$("#qrCodeView").show();
+	}
 	// Add the following code if you want the name of the file appear on select
 	$('#qrLoginGroup input[name="customImgFileName"]').on("change", function() {
 		let fileName = $(this).val().split("\\").pop();
@@ -163,16 +169,16 @@
 		let dirName = fileName;//.substring(0, fileName.indexOf('.'));     //"${fn:substring(fileName, 0, fn:indexOf(fileName, '.'))}";
 		$(this).siblings(".custom-file-label").addClass("selected").html(dirName);//"webkitRelativePath는 디렉토리명이 바껴서 저장이 안됩니다"
 	});
-	//이미지 미리보기
- 	let rt_imageChange = function(input) {
-		let reader = new FileReader();
-		reader.onload = function (e) {
-			$('#rt_image').attr('src', e.target.result);
-		}
-		reader.readAsDataURL(input[0].files[0]);
-	}
+
+
+	
+	
+	
+	
+	
+	
+	
 </script>
-  
 </div>
 <p><br></p><p><br></p><p><br></p>
 <jsp:include page="/common/footer.jsp" />

@@ -18,7 +18,7 @@
 	</select>
 	
 	<insert id="insertQrCode"> INSERT INTO QRCODE VALUES (DEFAULT, #{loginId}, #{customId}, #{customName}, #{qrCode}); </insert>
-	<select id="searchQrCode" resultType="com.spring.javagreenS_khv.vo.QrCodeVO"> SELECT IDX as idx, LOGIN_ID as loginId, CUSTOM_ID as customId, CUSTOM_NM as customName, QRCODE as QRCODE as qrcode FROM QRCODE WHERE QRCODE = #{qrCode}; </select>
+	<select id="searchQrCode" resultType="com.spring.javagreenS_khv.vo.QrCodeVO"> SELECT IDX as idx, LOGIN_ID as loginId, CUSTOM_ID as customId, CUSTOM_NM as customName, QRCODE as qrcode FROM QRCODE WHERE QRCODE = #{qrCode}; </select>
 	<select id="searchLogin2" resultType="com.spring.javagreenS_khv.dto.CustomCompLoginDTO">
 
 		SELECT A.LOGIN_ID AS LOGIN_ID,  -- primary key
