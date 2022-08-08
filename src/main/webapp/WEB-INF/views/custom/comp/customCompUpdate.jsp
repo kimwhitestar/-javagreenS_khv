@@ -482,7 +482,7 @@
 				_<div><input type="text" id="tel2" name="tel2" value="${vo.tel2}" size=4 maxlength=4 class="form-control" required/></div>
 				_<div><input type="text" id="tel3" name="tel3" value="${vo.tel3}" size=4 maxlength=4 class="form-control" required/></div>
 	 			<div id="blank" class="is-invalid"></div>
-	  		<div id="tel2Invalid" class="invalid-feedback">전화번호의 가운데 자리는 필수 입력사항입니다.</div>
+	  			<div id="tel2Invalid" class="invalid-feedback">전화번호의 가운데 자리는 필수 입력사항입니다.</div>
 	 	 		<div id="tel3Invalid" class="invalid-feedback">전화번호의 마지막 자리는 필수 입력사항입니다.</div> 
 	 			<input type="hidden" id="telNo" name="telNo" maxlength=13 class="form-control">
 			</div> 

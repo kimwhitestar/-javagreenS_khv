@@ -5,7 +5,6 @@
 <c:set var="ctxPath" value="${pageContext.request.contextPath}"/>
 <c:set var="security" value="<%= new com.spring.javagreenS_khv.common.SecurityUtil() %>" />
 <%-- <c:set var="bcrypt" value="<%= new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder() %>" /> --%>
-<c:set var="messageMap" value="${errMsgMap}" />
 <!DOCTYPE html>
 <html>
 <head>
@@ -20,6 +19,7 @@
 	<style>
 	</style>
 	<script>
+	
 	'use strict';
 	let customImgFileName = '';
 	
@@ -29,10 +29,10 @@
 		//regexStyleCheck();
 	});
 	
-/* 	function regexCheck() {
+ 	function regexCheck() {
 		//비밀번호체크(영문자,숫자,특수기호 @#$%&!?^~*+-_. 조합 3~20자리)
-		let regexPwd = /([a-zA-Z][0-9][@#$%&!?^~*+-_.]|[0-9][a-zA-Z][@#$%&!?^~*+-_.]|[@#$%&!?^~*+-_.][a-zA-Z][0-9]|[@#$%&!?^~*+-_.][0-9][a-zA-Z])/g;
-		
+		const regexPwd = /([a-zA-Z][0-9][@#$%&!?^~*+-_.]|[0-9][a-zA-Z][@#$%&!?^~*+-_.]|[@#$%&!?^~*+-_.][a-zA-Z][0-9]|[@#$%&!?^~*+-_.][0-9][a-zA-Z])/g;
+		let regexFlg = true;
 		//비밀번호 정규식 체크
 		if ( $("#loginPwd").val().match(regexPwd) ) {
 			$("#loginPwd").addClass("is-valid");
@@ -43,13 +43,13 @@
 			$("#loginPwdInvalid").addClass("is-invalid");
 			$("#loginPwdInvalid").text('영문자, 숫자, 특수기호(~!?@#$%^&*_+-.) 조합 3~20자리로 입력하세요');
  			$("#loginPwd").focus();
+ 			regexFlg = false;
 		}
+		return regexFlg;
 	}
- */	
 	
 	//회원가입폼 파라미터 편집후 서버로 요청하기
  	function editForm() {
-
 		//비밀번호 암호화
 		setEncryptPwd($("#loginPwd").val());
 		
@@ -93,14 +93,11 @@
 
 /* 		alert('[checkEntryForm] ' + $("#customImgFileName").val());	
 		alert('[checkEntryForm] ' + $('.custom-file input[name="customImgFileName"]').val());
- */
-//		if ( regexCheck() ) {
-		if ( editForm() ) {
-alert($('#addressGroup input[name="postcode"]').val());
-			entryForm.submit();
+*/		if ( regexCheck() ) {
+			if ( editForm() ) {
+				entryForm.submit();
+			}
 		}
-//		}
-	
 	}
 	let $btnEntry = $( "#entry" );//jquery 이벤트 핸들러를 위한 변수
 	$btnEntry.on( "click", checkEntryForm ); //jquery 이벤트 핸들러 on 적용, 처리핸들링함수 추가
@@ -174,63 +171,63 @@ alert($('#addressGroup input[name="postcode"]').val());
     <br/>
     <div class="form-group">
 			<label for="loginId">아이디 : &nbsp; &nbsp;<input type="button" value="아이디 중복체크" class="btn btn-info" onclick="idCheck()"/></label>
-			<input type="text" class="form-control" id="loginId" name="loginId" placeholder="아이디를 입력하세요." maxlength=20 required autofocus/>
+			<input type="text" class="form-control" id="loginId" name="loginId" value="${compEntryVo.loginId}" placeholder="아이디를 입력하세요." maxlength=20 required autofocus/>
 			<div id="loginIdInvalid" class="invalid-feedback">아이디는 필수 입력사항입니다.</div>
     </div>
     <div class="form-group">
-			<label for="loginPwd">비밀번호 :</label>
-			<input type="password" class="form-control" id="loginPwd" name="loginPwd" placeholder="비밀번호를 입력하세요." maxlength=20 required />
+			<label for="loginPwd">비밀번호 : </label>
+			<input type="password" class="form-control" id="loginPwd" name="loginPwd"  value="${compEntryVo.loginPwd}" placeholder="비밀번호를 입력하세요." maxlength=20 required />
 			<div id="loginPwdInvalid" class="invalid-feedback">비밀번호는 필수 입력사항입니다.</div>
 			<input type="hidden" class="form-control" name="encryptPwd" id="encryptPwd" />
     </div>
     <div class="form-group">
-			<label for="customName">기업명 :</label>
-			<input type="text" class="form-control" id="customName" name="customName" placeholder="기업명을 입력하세요." maxlength=20 required />
+			<label for="customName">기업명 : </label>
+			<input type="text" class="form-control" id="customName" name="customName"  value="${compEntryVo.customName}" placeholder="기업명을 입력하세요." maxlength=20 required />
 			<div id="customNameInvalid" class="invalid-feedback">기업명은 필수 입력사항입니다.</div>
     </div>
     <div class="form-group">
 			<label for="customNameShort">기업명(단축명칭) : &nbsp; &nbsp;</label>
-			<input type="text" class="form-control" id="customNameShort" name="customNameShort" placeholder="기업명(단축명칭)을 입력하세요." maxlength=20 required />
+			<input type="text" class="form-control" id="customNameShort" name="customNameShort"  value="${compEntryVo.customNameShort}" placeholder="기업명(단축명칭)을 입력하세요." maxlength=20 required />
 			<div id="customNameShortInvalid" class="invalid-feedback">기업명(단축명칭)은 필수 입력사항입니다.</div>
     </div>
     <div class="form-group">
     	<label for="estblDate">창립일 :</label>
 			<fmt:formatDate var="now" value="<%= new java.util.Date() %>" pattern="yyyy-MM-dd"/>
-			<input type="date" id="estblDate" name="estblDate" value="${now}" class="form-control"/>
+			<input type="date" id="estblDate" name="estblDate" value="${empty compEntryVo.estblDate ? now : compEntryVo.estblDate }" class="form-control"/>
     </div>
     <div class="form-group" id="companyNoGroup">
     	<label for="companyNo">사업자등록번호 : &nbsp; &nbsp;<input type="button" value="사업자등록번호 중복체크" class="btn btn-info" onclick="companyNoCheck()"/></label>
-			<input type="text" class="form-control" id="companyNo" name="companyNo" maxlength=20 placeholder="사업자등록번호를 하이폰(-) 포함하여 입력하세요." required/>
+			<input type="text" class="form-control" id="companyNo" name="companyNo" value="${compEntryVo.companyNo}" placeholder="사업자등록번호를 하이폰(-) 포함하여 입력하세요." maxlength=20 required/>
 			<div id="companyNoInvalid" class="invalid-feedback">사업자등록번호는 필수 입력사항입니다.</div>
     </div>
     <div class="form-group">
 			<label for="customKindCode">기업구분코드 :</label>
 			<select id="customKindCode" name="customKindCode" class="custom-select">
  				<c:forEach var="kindVo" items="${customKindList}" >
-					<option value="${kindVo.customKindCode}" >${kindVo.customKindName}</option>
+					<option value="${kindVo.customKindCode}" <c:if test='${compEntryVo.customKindCode eq kindVo.customKindCode}'>selected</c:if> > ${kindVo.customKindName} </option>
 				</c:forEach>
-				<option value="1" >일반법인업체</option>
+				<option value="1" <c:if test='${ "1" eq compEntryVo.customKindCode}'>selected</c:if> >일반법인업체</option>
 			</select>
 		</div>
     <div class="form-group" id="officeGroup">
 			<label for="office">사무실명 : </label>
 			<div class="input-group ">
 					<select class="form-control" id="office" name="office" onchange='changeSel(this,document.getElementById("txtOffice"))'>
-						<option value="기타" >기타</option>
-						<option value="물류과">물류과</option>
-						<option value="Ware Housing">Ware Housing</option>
-						<option value="입고과">입고과</option>
-						<option value="출고과">출고과</option>
-						<option value="운수과/운송과">운수과/운송과</option>
-						<option value="비서실">비서실</option>
-						<option value="기획실">기획실</option>
-						<option value="홍보과">홍보과</option>
-						<option value="경리과">경리과</option>
-						<option value="회계과">회계과</option>
-						<option value="총무과">총무과</option>
+						<option value="기타"   <c:if test='${"기타" eq compEntryVo.office}'>selected</c:if> >기타</option>
+						<option value="물류과" <c:if test='${"물류과" eq compEntryVo.office}'>selected</c:if> >물류과</option>
+						<option value="Ware Housing" <c:if test='${"Ware Housing" eq compEntryVo.office}'>selected</c:if> >Ware Housing</option>
+						<option value="입고과" <c:if test='${"입고과" eq compEntryVo.office}'>selected</c:if> >입고과</option>
+						<option value="출고과" <c:if test='${"출고과" eq compEntryVo.office}'>selected</c:if> >출고과</option>
+						<option value="운수과/운송과" <c:if test='${"운수과/운송과" eq compEntryVo.office}'>selected</c:if> >운수과/운송과</option>
+						<option value="비서실" <c:if test='${"비서실" eq compEntryVo.office}'>selected</c:if> >비서실</option>
+						<option value="기획실" <c:if test='${"기획실" eq compEntryVo.office}'>selected</c:if> >기획실</option>
+						<option value="홍보과" <c:if test='${"홍보과" eq compEntryVo.office}'>selected</c:if> >홍보과</option>
+						<option value="경리과" <c:if test='${"경리과" eq compEntryVo.office}'>selected</c:if> >경리과</option>
+						<option value="회계과" <c:if test='${"회계과" eq compEntryVo.office}'>selected</c:if> >회계과</option>
+						<option value="총무과" <c:if test='${"총무과" eq compEntryVo.office}'>selected</c:if> >총무과</option>
 					</select>
 					&nbsp;&nbsp;
-					<input type="text" class="form-control" id="txtOffice" name="txtOffice" maxlength=15 onclick='changeTxt(document.getElementById("office"))' />
+					<input type="text" class="form-control" id="txtOffice" name="txtOffice" value="${compEntryVo.txtOffice}" maxlength=15 onclick='changeTxt(document.getElementById("office"))' />
 					<div id="txtOfficeInvalid" class="invalid-feedback"></div>
 			</div>
     </div>
@@ -238,13 +235,13 @@ alert($('#addressGroup input[name="postcode"]').val());
 			<label for="address">주소 : </label>
 			<div class="input-group">
 				<div class="input-group">
-					<input type="text" class="input-group-prepend text-center" id="sample6_postcode" name="postcode" size="10" placeholder="우편번호"  disabled>&nbsp;
+					<input type="text" class="input-group-prepend text-center" id="sample6_postcode" name="postcode" size="10"  value="${compEntryVo.validatingPostcode}" placeholder="우편번호"  disabled>&nbsp;
 					<input type="button" class="btn btn-info" id="btnPostCode" onclick="sample6_execDaumPostcode()" value="우편번호 찾기">&nbsp;
-					<input type="text" class="form-control" id="sample6_address" name="roadAddress" placeholder="도로명주소">&nbsp;
-					<input type="text" class="form-control" id="sample6_extraAddress" name="extraAddress" placeholder="지번주소">	
+					<input type="text" class="form-control" id="sample6_address" name="roadAddress"  value="${compEntryVo.roadAddress}" placeholder="도로명주소">&nbsp;
+					<input type="text" class="form-control" id="sample6_extraAddress" name="extraAddress"  value="${compEntryVo.extraAddress}" placeholder="지번주소">	
 				</div>
 				<div class="input-group">
-					<input type="text" class="form-control mt-2" id="sample6_detailAddress" name="detailAddress" placeholder="상세주소" >
+					<input type="text" class="form-control mt-2" id="sample6_detailAddress" name="detailAddress"  value="${compEntryVo.detailAddress}" placeholder="상세주소" >
 					<div id="detailAddressInvalid" class="invalid-feedback"></div>
 				</div>
 			</div>
@@ -253,74 +250,74 @@ alert($('#addressGroup input[name="postcode"]').val());
     <div class="form-group" id="emailGroup">
 			<label for="email1">Email address : &nbsp; &nbsp;<input type="button" value="이메일 중복체크" class="btn btn-info" onclick="emailCheck()"/></label>
 			<div class="input-group">
-				<input type="text" class="form-control" id="email1" name="email1" placeholder="Email을 입력하세요." maxlength=25 required />
+				<input type="text" class="form-control" id="email1" name="email1" value="${compEntryVo.email1}" placeholder="Email을 입력하세요." maxlength=25 required />
 				<font size="5pt" class="text-center text-info"><b>@</b></font>
 				<div class="input-group-append" >
 					<select id="email2" name="email2" class="custom-select" onchange='changeSel(this,entryForm.txtEmail2)'>
 						<option value="-" > - 직접입력 - </option>
-						<option value="naver.com">naver.com</option>
-						<option value="hanmail.net">hanmail.net</option>
-						<option value="hotmail.com">hotmail.com</option>
-						<option value="gmail.com">gmail.com</option>
-						<option value="nate.com">nate.com</option>
-						<option value="yahoo.com">yahoo.com</option>
+						<option value="naver.com"   <c:if test='${"naver.com" eq compEntryVo.email2}'>selected</c:if> >naver.com</option>
+						<option value="hanmail.net" <c:if test='${"hanmail.net" eq compEntryVo.email2}'>selected</c:if> >hanmail.net</option>
+						<option value="hotmail.com" <c:if test='${"hotmail.com" eq compEntryVo.email2}'>selected</c:if> >hotmail.com</option>
+						<option value="gmail.com"   <c:if test='${"gmail.com" eq compEntryVo.email2}'>selected</c:if> >gmail.com</option>
+						<option value="nate.com"    <c:if test='${"nate.com" eq compEntryVo.email2}'>selected</c:if> >nate.com</option>
+						<option value="yahoo.com"   <c:if test='${"yahoo.com" eq compEntryVo.email2}'>selected</c:if> >yahoo.com</option>
 					</select>
 				</div>
 				&nbsp;&nbsp;
-				<input type="text" class="form-control" id="txtEmail2" name="txtEmail2" maxlength=25 onclick='changeTxt(entryForm.email2)' />
+				<input type="text" class="form-control" id="txtEmail2" name="txtEmail2" value="${compEntryVo.txtEmail2}" maxlength=25 onclick='changeTxt(entryForm.email2)' />
 				<div id="email1Invalid" class="invalid-feedback">이메일은 필수 입력사항입니다.</div>
 				<div id="txtEmail2Invalid" class="invalid-feedback"></div>
-				<input type="hidden" class="form-control" id="email" name="email" />
 			</div>
+			<input type="hidden" class="form-control" id="email" name="email" />
 	</div>
     <div class="form-group" id="telGroup">
 			<label >전화번호 :</label> &nbsp;&nbsp;
 			<div class="input-group">
 				<div class="input-group-prepend">
-					<select id="tel1" name="tel1" class="custom-select">
-						<option value="02">02</option>
-						<option value="031">031</option>
-						<option value="032">032</option>
-						<option value="041">041</option>
-						<option value="042">042</option>
-						<option value="043">043</option>
-						<option value="051">051</option>
-						<option value="052">052</option>
-						<option value="061">061</option>
-						<option value="062">062</option>
+					<select id="tel1" name="tel1" class="custom-select" >
+						<option value="02"  <c:if test='${"02" eq compEntryVo.tel1}'>selected</c:if> >02</option>
+						<option value="031" <c:if test='${"031" eq compEntryVo.tel1}'>selected</c:if> >031</option>
+						<option value="032" <c:if test='${"032" eq compEntryVo.tel1}'>selected</c:if> >032</option>
+						<option value="041" <c:if test='${"041" eq compEntryVo.tel1}'>selected</c:if> >041</option>
+						<option value="042" <c:if test='${"042" eq compEntryVo.tel1}'>selected</c:if> >042</option>
+						<option value="043" <c:if test='${"043" eq compEntryVo.tel1}'>selected</c:if> >043</option>
+						<option value="051" <c:if test='${"051" eq compEntryVo.tel1}'>selected</c:if> >051</option>
+						<option value="052" <c:if test='${"052" eq compEntryVo.tel1}'>selected</c:if> >052</option>
+						<option value="061" <c:if test='${"061" eq compEntryVo.tel1}'>selected</c:if> >061</option>
+						<option value="062" <c:if test='${"062" eq compEntryVo.tel1}'>selected</c:if> >062</option>
 					</select>
 				</div>
-				_<div><input type="text" id="tel2" name="tel2" size=4 maxlength=4 class="form-control" required /></div>
-				_<div><input type="text" id="tel3" name="tel3" size=4 maxlength=4 class="form-control" required /></div>
+				_<div><input type="text" id="tel2" name="tel2" value="${compEntryVo.tel2}" size=4 maxlength=4 class="form-control" required /></div>
+				_<div><input type="text" id="tel3" name="tel3" value="${compEntryVo.tel3}" size=4 maxlength=4 class="form-control" required /></div>
 	 			<div id="blankTel" class="is-invalid"></div>
-	  		<div id="tel2Invalid" class="invalid-feedback">전화번호의 가운데 자리는 필수 입력사항입니다.</div>
-	 	 		<div id="tel3Invalid" class="invalid-feedback">전화번호의 마지막 자리는 필수 입력사항입니다.</div> 
-	 			<input type="hidden" id="telNo" name="telNo" maxlength=13 class="form-control">
+	  			<div id="tel2Invalid" class="invalid-feedback">전화번호의 가운데 자리는 필수 입력사항입니다.</div>
+	  			<div id="tel3Invalid" class="invalid-feedback">전화번호의 마지막 자리는 필수 입력사항입니다.</div> 
 			</div> 
+ 			<input type="hidden" id="telNo" name="telNo" maxlength=13 class="form-control">
     </div>
     <div class="form-group" id="hpGroup">
 			<label >휴대전화 :</label> &nbsp;&nbsp;
 			<div class="input-group">
 				<div class="input-group-prepend">
 					<select id="hp1" name="hp1" class="custom-select">
-						<option value="010">010</option>
-						<option value="011">011</option>
-						<option value="016">016</option>
-						<option value="019">019</option>
-						<option value="070">070</option>
+						<option value="010" <c:if test='${"010" eq compEntryVo.hp1}'>selected</c:if> >010</option>
+						<option value="011" <c:if test='${"011" eq compEntryVo.hp1}'>selected</c:if> >011</option>
+						<option value="016" <c:if test='${"016" eq compEntryVo.hp1}'>selected</c:if> >016</option>
+						<option value="019" <c:if test='${"019" eq compEntryVo.hp1}'>selected</c:if> >019</option>
+						<option value="070" <c:if test='${"070" eq compEntryVo.hp1}'>selected</c:if> >070</option>
 					</select>
 				</div>
-				_<div><input type="text" id="hp2" name="hp2" size=4 maxlength=4 class="form-control" /></div>
-				_<div><input type="text" id="hp3" name="hp3" size=4 maxlength=4 class="form-control" /></div>
+				_<div><input type="text" id="hp2" name="hp2" value="${compEntryVo.hp2}" size=4 maxlength=4 class="form-control" /></div>
+				_<div><input type="text" id="hp3" name="hp3" value="${compEntryVo.hp3}" size=4 maxlength=4 class="form-control" /></div>
 	 			<div id="blankHp" class="is-invalid"></div>
 	  			<div id="hp2Invalid" class="invalid-feedback"></div>
 	 	 		<div id="hp3Invalid" class="invalid-feedback"></div> 
-	 			<input type="hidden" id="hpNo" name="hpNo" maxlength=13 class="form-control">
 			</div> 
+ 			<input type="hidden" id="hpNo" name="hpNo" maxlength=13 class="form-control">
     	</div>
 <%-- <div class="form-group">
 	    <label for="CKEDITOR">회사소개 : </label>
-	    <textarea rows="5" class="form-control" id="CKEDITOR" name="memo" placeholder="메모를 입력하세요" maxlength=500 ></textarea>
+	    <textarea rows="5" class="form-control" id="CKEDITOR" name="memo"  value="${compEntryVo.memo}" placeholder="메모를 입력하세요" maxlength=500 ></textarea>
 	    <script>
 	    	<!-- ckeditor글자편집기로 작성한 내용을 사진과 함께 upload할 때 Ajax로 사진upload처리 -->
 	    	CKEDITOR.replace("memo", {
