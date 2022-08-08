@@ -62,11 +62,9 @@
 
 	//회원가입폼 체크
 	function checkEntryForm() {
- 		//if ( editForm(regexCheck()) ) {
- 		if ( editForm() ) {
+ 		if ( editForm(regexCheck()) ) {
 			entryForm.submit();
-		}
- 		//}
+ 		}
  	}
 
 	//DB에 저장될 각각의 필드길이 체크
@@ -274,8 +272,8 @@
 	}
 	
 	//회원가입폼 파라미터 편집후 서버로 요청하기
- 	function editForm() {
-		//if (! flag) return false;
+ 	function editForm(flag) {
+		if (! flag) return false;
 		
 		//비밀번호 암호화
 		setEncryptPwd($("#loginPwd").val());
@@ -295,11 +293,6 @@
 			$("#email").val($("#email1").val() + '@' + $('#emailGroup select[name="email2"] option:selected').val());
 		}
 
-		//생일 체크(18년 이전 출생일 부터 가능)
-alert('now= ' + '${now}');
-alert('birthDate=' + $("#birthDate").val());
-alert('${now}' - $("#birthDate").val());
-		
 		//전화번호 편집
 		let tel2 = $('#telGroup input[name="tel2"]').val();
 		let tel3 = $('#telGroup input[name="tel3"]').val();
@@ -559,8 +552,8 @@ alert('${now}' - $("#birthDate").val());
 	    	<!-- ckeditor글자편집기로 작성한 내용을 사진과 함께 upload할 때 Ajax로 사진upload처리 -->
 	    	CKEDITOR.replace("memo", {
 	    		height:120, /*px쓰면 안뜸*/
-	    		filebrowserUploadUrl : "${ctxPath}/customComp/imageUpload", //사진 1장
-	    		uploadUrl : "${ctxPath}/customComp/imageUpload" //사진 여러장 드래그
+	    		filebrowserUploadUrl : "${ctxPath}/customPerson/imageUpload", //사진 1장
+	    		uploadUrl : "${ctxPath}/customPerson/imageUpload" //사진 여러장 드래그
 	    	});
 	    </script>
 	    <div id="CKEDITORInvalid" class="invalid-feedback"></div>

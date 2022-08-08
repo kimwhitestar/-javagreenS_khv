@@ -232,26 +232,11 @@ public class CustomPersonController {
 	
 	//회원가입화면
 	@RequestMapping(value="/customPersonEntry", method=RequestMethod.POST)
-	public String customPersonEntryPost(Model model, @Validated CustomPersonEntryUpdateFormVO customPersonVo, BindingResult bindRes) {
+	public String customPersonEntryPost(Model model, CustomPersonEntryUpdateFormVO customPersonVo, BindingResult bindRes) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		System.out.println("customPersonVo.getPostcode() = " + customPersonVo.getPostcode());			
 		System.out.println("customPersonVo.getValidatingPostcode() = " + customPersonVo.getValidatingPostcode());			
 		System.out.println("customPersonVo.getGender() = " + customPersonVo.getGender());			
-
-		/*
-		 * if (bindRes.hasErrors()) { // model.addAttribute("errMsgMap", errMsgMap);
-		 * 
-		 * //기업고객고분코드 목록조회 List<CustomKindDTO> customKindDtoList =
-		 * customKindService.searchCustomKindList(); List<CustomKindVO> customKindVoList
-		 * = new ArrayList<>(); CustomKindVO customKindVo = null; for (CustomKindDTO
-		 * customKindDto : customKindDtoList) { customKindVo = new CustomKindVO();
-		 * customKindVo.setCustomKindCode(customKindDto.getCustom_kind_cd());
-		 * customKindVo.setCustomKindName(customKindDto.getCustom_kind_nm());
-		 * customKindVoList.add(customKindVo); } model.addAttribute("customKindList",
-		 * customKindVoList);
-		 * 
-		 * return "redirect:/customPerson/customPersonEntry"; }
-		 */
 		
 		CustomPersonLoginDTO loginDto = new CustomPersonLoginDTO();
 		CustomPersonDTO personDto = new CustomPersonDTO();
