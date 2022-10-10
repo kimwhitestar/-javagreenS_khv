@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import javax.servlet.http.Cookie;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
@@ -45,6 +47,8 @@ import com.spring.javagreenS_khv.vo.CustomCompEntryUpdateFormVO;
 import com.spring.javagreenS_khv.vo.CustomKindVO;
 import com.spring.javagreenS_khv.vo.KakaoAddressVO;
 import com.spring.javagreenS_khv.vo.QrCodeVO;
+import com.spring.javagreenS_khv.vo.StyleCssCustomCompVO;
+import com.spring.javagreenS_khv.vo.StyleCssVO;
 
 //기업고객회원관리Controller
 @Controller
@@ -384,10 +388,12 @@ public class CustomCompController {
 	public String customCompEntryPost(HttpServletRequest request, MultipartFile fName, @Validated CustomCompEntryUpdateFormVO customCompVo, BindingResult bindRes, Model model) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
 		if (bindRes.hasErrors()) {
-			List<FieldError> fieldErrors = bindRes.getFieldErrors();
-			Map<String, String> errMsgMap = new HashMap<>();
-			initErrMsgList(errMsgMap, fieldErrors);
-			model.addAttribute("errMsgMap", errMsgMap);
+			List<FieldError> fieldErrors = bindRes.getFieldErrors();//발생된 에러
+			StyleCssCustomCompVO errMsgVo = new StyleCssCustomCompVO();
+			initErrMsgList(errMsgVo);//에러메세지 빈값 초기화
+			setErrMsgList(errMsgVo, fieldErrors);//발생된 에러메세지 재설정
+			model.addAttribute("errMsgVo", errMsgVo);
+			
 			List<CustomKindDTO> customKindDtoList = customKindService.searchCustomKindList(); //기업고객고분코드 목록조회 
 			List<CustomKindVO> customKindVoList = new ArrayList<>();
 			CustomKindVO customKindVo = null;
@@ -398,6 +404,7 @@ public class CustomCompController {
 				customKindVoList.add(customKindVo);
 			}
 			model.addAttribute("customKindList", customKindVoList);
+			
 			model.addAttribute("compEntryVo", customCompVo);
 			return "custom/comp/customCompEntry";
 		}
@@ -474,240 +481,60 @@ public class CustomCompController {
 //		}		
 	}
 	
-	private void initErrMsgList(Map<String, String> errMsgMap, List<FieldError> fieldErrors) {
+	//VO 멤버필드 빈값으로 초기화
+	private void initErrMsgList(StyleCssCustomCompVO vo) {
 		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
-		int i=0;
-		for (FieldError fe : fieldErrors) {
-			errMsgMap.put(fe.getField(), fe.getDefaultMessage());
-			System.out.println("field : " + fe.getField());
-			System.out.println("Message : " + fe.getDefaultMessage());
-			i++;
-		}
-		System.out.println(" FieldErrors : " + i);
-	}
+		
+		Method[] methods = vo.getClass().getDeclaredMethods();
+		Method method = null;
+		Field[] fields = vo.getClass().getDeclaredFields();
+		String methodName = null;
+		int size = fields.length;
+		StyleCssVO cssVo = null;
 
-	//error style class 적용
-/*  	function regexStyleCheck() {
-		let message = '';
- 		
- 		//회원아이디 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#loginId").addClass("is-valid");
-			$("#loginIdInvalid").addClass("is-valid");
- 			$("#loginIdInvalid").text('');
-		} else {
-			$("#loginId").addClass("is-invalid");
-			$("#loginIdInvalid").addClass("is-invalid");
-			$("#loginIdInvalid").text(message);
-		}		
-		//비밀번호 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#loginPwd").addClass("is-invalid");
-			$("#loginPwdInvalid").addClass("is-invalid");
-			$("#loginPwdInvalid").text(message);
- 			$("#loginPwd").focus();
-		} else {
-			$("#loginPwd").addClass("is-valid");
-			$("#loginPwdInvalid").addClass("is-valid");
- 			$("#loginPwdInvalid").text('');
-		}
-		//기업명 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#customName").addClass("is-invalid");
-			$("#customNameInvalid").addClass("is-invalid");
-			$("#customNameInvalid").text(message);
-			$("#customName").focus();
-		} else {
-			$("#customName").addClass("is-valid");
-			$("#customNameInvalid").addClass("is-valid");
-			$("#customNameInvalid").text('');
-		}
-		//기업명(단축명칭) 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#customNameShort").addClass("is-invalid");
-			$("#customNameShortInvalid").addClass("is-invalid");
-			$("#customNameShortInvalid").text(message);
-			$("#customNameShort").focus();
-		} else {
-			$("#customNameShort").addClass("is-valid");
-			$("#customNameShortInvalid").addClass("is-valid");
-			$("#customNameShortInvalid").text('');
-		}
-		//사업자등록번호 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#companyNo").addClass("is-invalid");
-			$("#companyNoInvalid").addClass("is-invalid");
-			$("#companyNoInvalid").text(message);
-			$("#companyNo").focus();
-		} else {
-			$("#companyNo").addClass("is-valid");
-			$("#companyNoInvalid").addClass("is-valid");
-			$("#companyNoInvalid").text('');
-		}
-		//사무실명 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#txtOffice").addClass("is-invalid");
-			$("#txtOfficeInvalid").addClass("is-invalid");
-			$("#txtOfficeInvalid").text(message);
-			$("#txtOffice").focus();
-		} else {
-			$("#txtOffice").addClass("is-valid");
-			$("#txtOfficeInvalid").addClass("is-valid");
-			$("#txtOfficeInvalid").text('');
-		}
-		//우편번호 공란 체크
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == $('#addressGroup input[name="postcode"]').val()
-			&& '' != $('#addressGroup input[name="detailAddress"]').val() ) {
-			$('#addressGroup input[name="detailAddress"]').addClass("is-invalid");
-			$("#detailAddressInvalid").addClass("is-invalid");
-			$("#detailAddressInvalid").text("주소는 우편번호찾기로 검색 후 입력하세요");
-			$('#addressGroup input[name="detailAddress"]').focus();
-		} else {
-			$('#addressGroup input[name="detailAddress"]').addClass("is-valid");
-			$("#detailAddressInvalid").addClass("is-valid");
-			$("#detailAddressInvalid").text('');
-		}
-		//상세주소 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
- 		if ( '' != $('#addressGroup input[name="postcode"]').val() 
- 			&& '' != $('#addressGroup input[name="detailAddress"]').val() ) {
-			if ( ! $('#addressGroup input[name="detailAddress"]').val().(message) ) {
-				$('#addressGroup input[name="detailAddress"]').addClass("is-invalid");
-				$("#detailAddressInvalid").addClass("is-invalid");
-				$("#detailAddressInvalid").text(message);
-				$('#addressGroup input[name="detailAddress"]').focus();
-			} else {
-				$('#addressGroup input[name="detailAddress"]').addClass("is-valid");
-				$("#detailAddressInvalid").addClass("is-valid");
-				$("#detailAddressInvalid").text('');
+		for (int i=0; i<methods.length; i++) {
+			method = methods[i];
+			methodName = methods[i].getName();
+			if (methodName.substring(0, 3).equals("set")) { 
+				cssVo = new StyleCssVO();
+				cssVo.setFieldCss("is-valid");
+				cssVo.setInvalidCss("is-valid");
+				cssVo.setMessageTxt("");
+				try {
+					method.invoke(cssVo); //setOOOMethod()를 invoke로 실행
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+					logger.debug(e.getMessage());
+				}
 			}
 		}
-		//이메일 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#email1").addClass("is-invalid");
-			$("#email1Invalid").addClass("is-invalid");
-			$("#email1Invalid").text(message);
-			$("#email1").focus();
-		} else {
-			$("#email1").addClass("is-valid");
-			$("#email1Invalid").addClass("is-valid");
-			$("#email1Invalid").text('');
+	}
+	
+	//initErrMsgList()에서 초기화된 VO에 실제로 발생된 Error Message 값으로 재설정
+	private void setErrMsgList(StyleCssCustomCompVO vo, List<FieldError> fieldErrors) {
+		logger.info("[" + new Object(){}.getClass().getEnclosingMethod().getName() + "]"); //현재 실행중인 메소드명
+		int errorsSize=fieldErrors.size();
+		FieldError fe = null;
+		Method method = null;
+		StyleCssVO cssVo = null;
+		
+		System.out.println(" FieldErrors : " + errorsSize);
+		for (int j=0; j<errorsSize; j++) {
+				fe = fieldErrors.get(j);
+				System.out.println("field : " + fe.getField());
+				System.out.println("Message : " + fe.getDefaultMessage());
+				
+				cssVo = new StyleCssVO();
+				cssVo.setFieldCss("is-invalid"); //에러스타일CSS 설정
+				cssVo.setInvalidCss("is-invalid"); //에러스타일CSS 설정
+				cssVo.setMessageTxt(fe.getDefaultMessage()); //에러메세지 설정
+				try {
+					method = vo.getClass().getDeclaredMethod("set" + StringUtils.capitalize(fe.getField()), null); //setOOO메소드명으로 찾아서 메소드 객체 획득 
+					method.invoke(cssVo); //setOOO메소드 실행
+				} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
+					logger.debug(e.getMessage());
+				}
 		}
-		//이메일 도메인 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		let options = entryForm.email2.options;
-	  	if(options[0].selected == true) {//도메인 셀렉트박스에서 '-직접입력-' 선택의 경우
-	  		if (entryForm.txtEmail2.value == '' ) {//도메인 직접입력 텍스트박스가 공란의 경우
-					$("#txtEmail2").addClass("is-invalid");
-					$("#txtEmail2Invalid").addClass("is-invalid");
-					$("#txtEmail2Invalid").text(message);
-					$("#txtEmail2").focus();
-	  		} else {//도메인 직접입력 텍스트박스에 입력한 경우
-					if ( ! $("#txtEmail2").val().(message) ) {//도메인값 REGEX 유효성 체크
-						$("#txtEmail2").addClass("is-invalid");
-						$("#txtEmail2Invalid").addClass("is-invalid");
-						$("#txtEmail2Invalid").text(message);
-						$("#txtEmail2").focus();
-					} else {
-						$("#txtEmail2").addClass("is-valid");
-						$("#txtEmail2Invalid").addClass("is-valid");
-						$("#txtEmail2Invalid").text('');
-					}
-	  		}
-	  	}	else {//도메인 셀렉트박스에서 선택한 경우
-				$("#txtEmail2").addClass("is-valid");
-				$("#txtEmail2Invalid").addClass("is-valid");
-				$("#txtEmail2Invalid").text('');
-	  	}
-		//전화번호 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ('' != $("#tel3").val()) {
-			if ( ! $("#tel3").val().(message) ) {
-				$("#tel3").addClass("is-invalid");
-				$("#tel3Invalid").addClass("is-invalid");
-				$("#tel3Invalid").text(message);
-				$("#tel3").focus();
-			} else {
- 				$("#tel3").addClass("is-valid");
-				$("#tel3Invalid").addClass("is-valid");
-				$("#tel3Invalid").text('');
-			}
-		} 
-		//전화번호 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ('' != $("#tel2").val()) {
-			if ( ! $("#tel2").val().(message) ) {
-				$("#tel2").addClass("is-invalid");
-				$("#tel2Invalid").addClass("is-invalid");
-				$("#tel2Invalid").text(message);
-				$("#tel2").focus();
-			} else {
-				$("#tel2").addClass("is-valid");
-				$("#tel2Invalid").addClass("is-valid");
-				$("#tel2Invalid").text('');
-			}
-		}
-		//휴대폰번호 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ('' != $("#hp3").val()) {
-			if ( ! $("#hp3").val().(message) ) {
-				$("#hp3").addClass("is-invalid");
-				$("#hp3Invalid").addClass("is-invalid");
-				$("#hp3Invalid").text(message);
-				$("#hp3").focus();
-			} else {
- 				$("#hp3").addClass("is-valid");
-				$("#hp3Invalid").addClass("is-valid");
-				$("#hp3Invalid").text('');
-			}
-		} 
-		//휴대폰번호 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ('' != $("#hp2").val()) {
-			if ( ! $("#hp2").val().(message) ) {
-				$("#hp2").addClass("is-invalid");
-				$("#hp2Invalid").addClass("is-invalid");
-				$("#hp2Invalid").text(message);
-				$("#hp2").focus();
-			} else {
-				$("#hp2").addClass("is-valid");
-				$("#hp2Invalid").addClass("is-valid");
-				$("#hp2Invalid").text('');
-			}
-		}		
-		//메모 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#CKEDITOR").addClass("is-invalid");
-			$("#CKEDITORInvalid").addClass("is-invalid");
-			$("#CKEDITORInvalid").text(message);
-			$("#CKEDITOR").focus();
-		} else {
-			$("#CKEDITOR").addClass("is-valid");
-			$("#CKEDITORInvalid").addClass("is-valid");
-			$("#CKEDITORInvalid").text('');
-		}
- 		//회원사진명 정규식 에러 style class 적용
- 		message = '${(String)messageMap.get("id........................................")}';
-		if ( '' == message ) {
-			$("#customImgFileName").addClass("is-invalid");
-			$("#customImgFileNameInvalid").addClass("is-invalid");
-			$("#customImgFileNameInvalid").text(message);
-			$("#customImgFileName").focus();
-		} else {
-			$("#customImgFileName").addClass("is-valid");
-			$("#customImgFileNameInvalid").addClass("is-valid");
-			$("#customImgFileNameInvalid").text('');
-		}
-	} */
+	}
 
 	//로그인ID중복체크화면 이동
 	@RequestMapping(value="/customCompLoginIdCheck", method=RequestMethod.GET)
