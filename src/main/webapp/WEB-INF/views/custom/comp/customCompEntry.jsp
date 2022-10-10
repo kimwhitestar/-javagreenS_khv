@@ -171,8 +171,8 @@
     <br/>
     <div class="form-group">
 			<label for="loginId">아이디 : &nbsp; &nbsp;<input type="button" value="아이디 중복체크" class="btn btn-info" onclick="idCheck()"/></label>
-			<input type="text" class="form-control" id="loginId" name="loginId" value="${compEntryVo.loginId}" placeholder="아이디를 입력하세요." maxlength=20 required autofocus/>
-			<div id="loginIdInvalid" class="invalid-feedback">아이디는 필수 입력사항입니다.</div>
+			<input type="text" class="form-control <%--${errMsgVo.loginId.fieldCss}--%>" id="loginId" name="loginId" value="${compEntryVo.loginId}" placeholder="아이디를 입력하세요." maxlength=20 required autofocus/>
+			<div id="loginIdInvalid" class="invalid-feedback <%--${errMsgVo.loginId.invalidCss}--%>"><%--아이디는 필수 입력사항입니다... ${errMsgVo.loginId.messageTxt}--%></div>
     </div>
     <div class="form-group">
 			<label for="loginPwd">비밀번호 : </label>
